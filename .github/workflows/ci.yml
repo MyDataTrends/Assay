@@ -22,14 +22,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install core deps
+      - name: Install deps
         run: |
-          pip install --no-cache-dir \
-            fastapi uvicorn streamlit pyyaml python-dotenv requests httpx \
-            pandas numpy scikit-learn xgboost lightgbm plotly matplotlib \
-            anthropic cryptography structlog scipy pillow openpyxl fuzzywuzzy rapidfuzz \
-            urllib3 tornado werkzeug filelock fonttools \
-            pytest responses moto
+          grep -vE "^\s*#|torch|spacy|en_core_web|llama.cpp|llama-cpp|selenium|fastembed|qdrant|catboost|jupyterlab|notebook|ipywidgets|transformers|tokenizers" requirements.txt > /tmp/requirements-ci.txt
+          pip install --no-cache-dir -r /tmp/requirements-ci.txt
 
       - name: Run tests
         env:
