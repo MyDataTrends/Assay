@@ -94,7 +94,7 @@ def run_baseline(
         }
     else:
         y_enc, uniques = pd.factorize(y)
-        model = LogisticRegression(max_iter=1000, multi_class="auto")
+        model = LogisticRegression(max_iter=1000)
         model.fit(X, y_enc)
         preds = model.predict(X)
         probs = model.predict_proba(X)

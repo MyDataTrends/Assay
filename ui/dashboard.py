@@ -193,7 +193,7 @@ def build_dashboard(data: pd.DataFrame, result: dict, target_column: str) -> dic
         "confidence_score": result.get("model_info", {}).get("confidence_score", 80),
     }
     model_type = (
-        "time-series" if any("date" in col.lower() for col in data.columns) else "generic"
+        "time-series" if data is not None and any("date" in col.lower() for col in data.columns) else "generic"
     )
     try:
         return orchestrate_dashboard(
@@ -782,7 +782,6 @@ with chat_tab:
                     st.markdown(response)
                     ctx.add_message("assistant", response)
                 else:
-                else:
                     # Glass Box UX: Show the user what's happening
                     with st.status("Processing Request...", expanded=True) as status:
                         status.write("🧠 Identifying intent...")
@@ -954,7 +953,7 @@ if st.button("Submit Rating", key="submit_rating"):
 result = st.session_state.get("result")
 if result:
     target_col = result.get("model_info", {}).get("target") or (
-        data.columns[-1] if len(data.columns) else ""
+        data.columns[-1] if data is not None and len(data.columns) else ""
     )
     
     # Display Data Quality Report (if diagnostics available)
@@ -1013,7 +1012,7 @@ if result:
     elif atype == "clustering":
         st.write("Cluster Centers")
         st.write(result.get("centers"))
-        if data.shape[1] >= 2:
+        if data is not None and data.shape[1] >= 2:
             df_plot = data.iloc[:, :2].copy(deep=False)
             df_plot["label"] = result.get("labels")
             st.scatter_chart(df_plot, x="label", y=df_plot.columns[0])

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import sys
+import pandas as pd
 from streamlit.testing.v1 import AppTest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -8,6 +9,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 def test_dashboard_recommendations_and_report(tmp_path):
     dash_path = Path(__file__).resolve().parents[1] / "ui" / "dashboard.py"
     at = AppTest.from_file(str(dash_path))
+    dummy_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    at.session_state["datasets"] = {"dummy": dummy_df}
+    at.session_state["primary_dataset_id"] = "dummy"
     at.session_state["result"] = {
         "analysis_type": "regression",
         "predictions": [1, 2],
@@ -17,12 +21,12 @@ def test_dashboard_recommendations_and_report(tmp_path):
     }
     at.run(timeout=20)
 
-    exp = at.sidebar.expander[0]
+    exp = next(e for e in at.sidebar.expander if e.label == "Recommended Models")
     assert exp.label == "Recommended Models"
     rec = json.loads(exp.json[0].value)
     assert rec["semantic_merge"] == ["lr", "rf"]
 
-    report_exp = at.expander[0]
+    report_exp = next(e for e in at.expander if e.label == "Merge Report")
     assert report_exp.label == "Merge Report"
     dl = report_exp.get("download_button")[0]
     assert dl.proto.label == "Download merge_report.json"
