@@ -5,7 +5,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from catalog.semantic_index import build_index
-import Integration.semantic_integration as si
+import Integration.semantic_merge as si
 from preprocessing.metadata_parser import infer_column_meta
 
 
