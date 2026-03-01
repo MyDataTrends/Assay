@@ -27,7 +27,7 @@ jobs:
           pip install --no-cache-dir \
             fastapi uvicorn streamlit pyyaml python-dotenv requests httpx \
             pandas numpy scikit-learn xgboost lightgbm plotly matplotlib \
-            anthropic cryptography structlog scipy pillow openpyxl fuzzywuzzy \
+            anthropic cryptography structlog scipy pillow openpyxl fuzzywuzzy rapidfuzz \
             urllib3 tornado werkzeug filelock fonttools \
             pytest responses moto
 

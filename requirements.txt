@@ -10,6 +10,7 @@ pandas>=2.2.0
 scikit-learn>=1.5.0
 transformers>=4.26.1
 fuzzywuzzy==0.18.0
+rapidfuzz
 boto3
 # Optional: llama-cpp-python for non-Windows
 llama-cpp-python==0.3.9 ; sys_platform != 'win32'
