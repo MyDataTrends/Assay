@@ -15,6 +15,9 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import json
 import sys
+from utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Ensure project root is in path
 # Ensure project root is in path
@@ -124,6 +127,28 @@ def cascade_execute(df, query: str, context: dict = None) -> dict:
         except Exception as e:
             print(f"Artifact save failed: {e}")
         
+        # Determine plan type from confidence level
+        confidence = plan.metadata.get("confidence", 0.0)
+        if confidence >= 0.7:
+            plan_type = "template"
+        elif confidence >= 0.6:
+            plan_type = "llm_generated"
+        else:
+            plan_type = "learned"
+
+        steps = [
+            {
+                "step_num": i + 1,
+                "label": step.action,
+                "tool": step.tool,
+                "status": step.status.value if hasattr(step.status, "value") else str(step.status),
+                "duration_ms": step.execution_time_ms,
+                "error": step.error,
+                "output_preview": str(step.result)[:200] if step.result is not None else None,
+            }
+            for i, step in enumerate(plan.steps)
+        ]
+
         return {
             "success": result.success,
             "output": result.output,
@@ -132,6 +157,9 @@ def cascade_execute(df, query: str, context: dict = None) -> dict:
             "plan_id": plan.plan_id,
             "steps_completed": result.steps_completed,
             "total_steps": result.total_steps,
+            "plan_type": plan_type,
+            "confidence": confidence,
+            "steps": steps,
         }
         
     except ImportError as e:

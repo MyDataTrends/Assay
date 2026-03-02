@@ -21,7 +21,7 @@ def test_dashboard_recommendations_and_report(tmp_path):
     }
     at.run(timeout=20)
 
-    exp = next(e for e in at.sidebar.expander if e.label == "Recommended Models")
+    exp = next(e for e in at.expander if e.label == "Recommended Models")
     assert exp.label == "Recommended Models"
     rec = json.loads(exp.json[0].value)
     assert rec["semantic_merge"] == ["lr", "rf"]
@@ -41,8 +41,12 @@ def test_run_history_display(tmp_path, monkeypatch):
 
     dash_path = Path(__file__).resolve().parents[1] / "ui" / "dashboard.py"
     at = AppTest.from_file(str(dash_path))
+    dummy_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    at.session_state["datasets"] = {"dummy": dummy_df}
+    at.session_state["primary_dataset_id"] = "dummy"
     at.run(timeout=20)
 
-    assert any(s.value == "Run History" for s in at.sidebar.subheader)
-    markdowns = [m.value for m in at.sidebar.markdown]
-    assert "abc123" in "".join(markdowns)
+    # Run History is now in an expander in the Analyze tab (not the sidebar)
+    assert any(e.label == "Run History" for e in at.expander)
+    all_text = "".join(m.value for m in at.markdown)
+    assert "abc123" in all_text

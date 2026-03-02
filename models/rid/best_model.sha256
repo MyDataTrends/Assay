@@ -1,8 +1,8 @@
 {
-  "checksum": "a7a1c17d0b8235c9e329f062a054819595727552ab08f29d84ed39b268d8dadf",
+  "checksum": "098893468ed58149ba91d03cd4e2b7d72dd7490c4e5d6193bd9a626f1aeb7452",
   "algorithm": "sha256",
-  "created_at": "2026-02-16T23:03:27.394624",
-  "file_size": 52,
+  "created_at": "2026-02-28T22:30:44.281673",
+  "file_size": 58,
   "metadata": {
     "run_id": "rid",
     "filename": "best_model",

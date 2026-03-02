@@ -74,3 +74,16 @@ agents/digests/*.md
 
 # === Presentations ===
 reports/presentations/*.pptx
+
+# === Runtime Outputs ===
+run_history.json
+settings.local.json
+reports/*.md
+
+# === Model Weights & Checkpoints ===
+best_model
+best_model.sha256
+models/
+
+# === User Data ===
+User_Data/

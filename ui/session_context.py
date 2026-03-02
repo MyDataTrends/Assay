@@ -161,7 +161,7 @@ class SessionContext:
     
     def get_recent_messages(self, n: int = 10) -> List[Dict[str, Any]]:
         """Get the N most recent messages."""
-        return st.session_state[KEYS["chat_history"]][-n:]
+        return self.chat_history[-n:]
     
     def clear_chat(self) -> None:
         """Clear chat history."""
