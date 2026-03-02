@@ -25,7 +25,7 @@ class DescribeDatasetTool(BaseTool):
     category = "analysis"
     
     def get_parameters(self) -> List[ToolParameter]:
-        return [ToolParameter("dataset_id", "string", "Dataset ID", required=True)]
+        return [ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp", "sales_2024"])]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         import pandas as pd
@@ -54,7 +54,7 @@ class DescribeDatasetTool(BaseTool):
                 }
             else:
                 info["unique"] = int(df[col].nunique())
-                info["top_values"] = df[col].value_counts().head(3).to_dict()
+                info["top_values"] = {str(k): int(v) for k, v in df[col].value_counts().head(3).items()}
             result["columns"].append(info)
         
         return success_response(result)

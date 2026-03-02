@@ -37,6 +37,10 @@ class MCPConfig:
     enable_stdio: bool = field(default_factory=lambda: get_bool("MCP_ENABLE_STDIO", True))
     enable_http: bool = field(default_factory=lambda: get_bool("MCP_ENABLE_HTTP", True))
     
+    # Single-user mode: when True, requests without a session_id are routed
+    # to a persistent "default" session. Ideal for local single-user deployments.
+    single_user_mode: bool = field(default_factory=lambda: get_bool("MCP_SINGLE_USER", True))
+    
     # Authentication
     require_auth: bool = field(default_factory=lambda: get_bool("MCP_REQUIRE_AUTH", False))
     api_keys: Set[str] = field(default_factory=set)

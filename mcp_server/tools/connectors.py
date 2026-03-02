@@ -992,12 +992,14 @@ class ConnectAPITool(BaseTool):
             ToolParameter(
                 "url", "string",
                 "Base URL of the API (required if preset not used)",
-                required=False
+                required=False,
+                examples=["https://api.stlouisfed.org/fred", "https://api.worldbank.org/v2"]
             ),
             ToolParameter(
                 "preset", "string",
                 "Name of a pre-configured API preset (e.g., 'world_bank', 'fred')",
-                required=False
+                required=False,
+                examples=["fred", "world_bank", "kaggle"]
             ),
             ToolParameter(
                 "auth", "object",
@@ -1199,8 +1201,9 @@ class FetchAPIDataTool(BaseTool):
             ),
             ToolParameter(
                 "endpoint", "string",
-                "API endpoint path (relative to base URL)",
-                required=True
+                "API endpoint path (relative to base URL). Do NOT repeat the base URL prefix.",
+                required=True,
+                examples=["/series/observations?series_id=GDP&file_type=json", "/country/US/indicator/NY.GDP.MKTP.CD"]
             ),
             ToolParameter(
                 "method", "string",

@@ -24,6 +24,7 @@ class ToolParameter:
     enum: Optional[List[Any]] = None
     items: Optional[Dict[str, Any]] = None  # For array types
     properties: Optional[Dict[str, Any]] = None  # For object types
+    examples: Optional[List[Any]] = None  # Example values for this parameter
 
 
 def build_input_schema(
@@ -47,6 +48,8 @@ def build_input_schema(
             prop["items"] = param.items
         if param.properties:
             prop["properties"] = param.properties
+        if param.examples:
+            prop["examples"] = param.examples
         
         properties[param.name] = prop
         
@@ -117,7 +120,7 @@ class BaseTool(ABC):
     
     def to_definition(self) -> "ToolDefinition":
         """Convert to a ToolDefinition for registration."""
-        from .server import ToolDefinition
+        from ..server import ToolDefinition
         return ToolDefinition(
             name=self.name,
             description=self.description,

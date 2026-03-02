@@ -540,19 +540,19 @@ class GenerateDynamicConnectorTool(BaseTool):
         ToolParameter(
             name="docs_url",
             description="URL to the API documentation (OpenAPI spec, Swagger, or docs page)",
-            param_type="string",
+            type="string",
             required=True,
         ),
         ToolParameter(
             name="api_key",
             description="Optional API key to test the generated connector",
-            param_type="string",
+            type="string",
             required=False,
         ),
         ToolParameter(
             name="api_name",
             description="Optional name for the API (auto-detected if not provided)",
-            param_type="string",
+            type="string",
             required=False,
         ),
     ]

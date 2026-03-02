@@ -322,6 +322,10 @@ class MCPServer:
         arguments = params.get("arguments", {})
         session_id = params.get("_meta", {}).get("session_id")
         
+        # Single-user mode: default to a sticky "default" session
+        if not session_id and self.config.single_user_mode:
+            session_id = "default"
+        
         if not tool_name:
             raise ValueError("Missing tool name")
         
@@ -451,8 +455,15 @@ class MCPServer:
     # =========================================================================
     
     async def run_stdio(self) -> None:
-        """Run the MCP server using stdio transport."""
         logger.info("Starting MCP server (stdio transport)")
+        
+        if sys.stdin.isatty():
+            logger.error(
+                "Stdio transport requires redirected pipes. "
+                "Please run via an MCP client, or use the HTTP transport (--transport http)."
+            )
+            return
+
         self._running = True
         
         reader = asyncio.StreamReader()

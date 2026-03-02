@@ -244,9 +244,9 @@ class CreateTimeSeriesPlotTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("time_col", "string", "Time column", required=True),
-            ToolParameter("value_col", "string", "Value column", required=True),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp"]),
+            ToolParameter("time_col", "string", "Time/date column name", required=True, examples=["date", "observation_date", "timestamp"]),
+            ToolParameter("value_col", "string", "Value column to plot", required=True, examples=["value", "price", "amount"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
