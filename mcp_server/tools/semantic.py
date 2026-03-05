@@ -335,6 +335,7 @@ class SemanticMergeTool(BaseTool):
             return error_response("left_on and right_on must have same length")
         
         try:
+            import pandas as pd
             # Perform merge
             merged_df = pd.merge(
                 left_df,

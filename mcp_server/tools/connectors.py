@@ -75,23 +75,28 @@ def detect_source_type(connection_string: str) -> Dict[str, Any]:
     cs = connection_string.strip()
     
     # Check for file paths
-    if os.path.exists(cs) or cs.startswith("./") or cs.startswith("../"):
-        ext = Path(cs).suffix.lower()
+    ext = Path(cs).suffix.lower()
+    file_ext_map = {
+        ".csv": "csv",
+        ".xlsx": "excel",
+        ".xls": "excel",
+        ".parquet": "parquet",
+        ".pq": "parquet",
+        ".json": "json",
+        ".xml": "xml",
+        ".feather": "feather",
+    }
+    is_local_path = (
+        os.path.exists(cs)
+        or cs.startswith("./")
+        or cs.startswith("../")
+        or (ext in file_ext_map and "://" not in cs)
+    )
+    if is_local_path:
         result["source_type"] = "file"
         result["components"]["path"] = cs
         result["valid"] = True
-        
-        ext_map = {
-            ".csv": "csv",
-            ".xlsx": "excel",
-            ".xls": "excel",
-            ".parquet": "parquet",
-            ".pq": "parquet",
-            ".json": "json",
-            ".xml": "xml",
-            ".feather": "feather",
-        }
-        result["provider"] = ext_map.get(ext, "unknown")
+        result["provider"] = file_ext_map.get(ext, "unknown")
         return result
     
     # Check for database connection strings

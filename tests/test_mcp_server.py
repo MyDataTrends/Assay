@@ -59,9 +59,9 @@ class TestMCPSession:
         from datetime import datetime, timedelta
         
         session = MCPSession()
-        session.last_accessed = datetime.utcnow() - timedelta(hours=2)
+        session.last_accessed = datetime.utcnow() - timedelta(hours=3)
         assert session.is_expired(3600) is True  # 1 hour timeout
-        assert session.is_expired(7200) is False  # 2 hour timeout
+        assert session.is_expired(14400) is False  # 4 hour timeout
 
 
 class TestSessionManager:
