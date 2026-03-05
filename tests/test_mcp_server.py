@@ -291,7 +291,7 @@ class TestFeedbackTools:
         from mcp_server.tools.feedback import SubmitRatingTool
         
         tool = SubmitRatingTool()
-        result = await tool.execute({"run_id": "test123", "rating": 5})
+        result = await tool.execute({"tool_name": "test123", "rating": 5})
         
         assert result["success"] is True
     

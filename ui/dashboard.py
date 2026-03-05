@@ -281,6 +281,20 @@ if not st.session_state["datasets"]:
             st.session_state["primary_dataset_id"] = list(st.session_state["datasets"].keys())[0]
             st.toast("♻️ Restored datasets from previous session")
 
+# First-run: auto-load sample data so the dashboard isn't empty
+if not st.session_state["datasets"]:
+    _sample = Path("datasets/sample_sales_data.csv")
+    if _sample.exists():
+        try:
+            from preprocessing.data_cleaning import standardize_dataframe
+            _df = standardize_dataframe(pd.read_csv(_sample))
+            st.session_state["datasets"]["Sample Sales"] = _df
+            st.session_state["primary_dataset_id"] = "Sample Sales"
+            _persist_dataset("Sample Sales", _df)
+            st.toast("📊 Loaded sample sales data — explore or upload your own!")
+        except Exception:
+            pass
+
 if st.session_state["datasets"]:
     active_ds = st.session_state["primary_dataset_id"] or list(st.session_state["datasets"].keys())[0]
     if active_ds not in st.session_state["datasets"]:
@@ -312,6 +326,19 @@ st.sidebar.divider()
 ctx = get_context()
 with st.sidebar:
     render_session_panel(ctx)
+
+    # Guided onboarding — show on first run until dismissed
+    if not st.session_state.get("onboarding_dismissed"):
+        with st.expander("🚀 **Getting Started**", expanded=True):
+            st.markdown(
+                "1. **Explore** the pre-loaded sample data below\n"
+                "2. **Ask a question** in the chat — try *\"show trends\"*\n"
+                "3. **Upload your own CSV** via the Data tab\n"
+                "4. **Visualize** with the Explorer tab"
+            )
+            if st.button("✓ Got it!", key="dismiss_onboarding"):
+                st.session_state["onboarding_dismissed"] = True
+                st.rerun()
 
 # ─────────────────────────────────────────────
 # Metadata loading (only when data is available)
@@ -491,7 +518,7 @@ with analyze_tab:
             chat_context = ". ".join(context_parts)
 
             # Chat history display
-            for msg in ctx.chat_history:
+            for i, msg in enumerate(ctx.chat_history):
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
                     metadata = msg.get("metadata", {})

@@ -20,9 +20,9 @@ class StartWorkflowTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("user_id", "string", "User identifier"),
-            ToolParameter("file_name", "string", "Dataset file name"),
-            ToolParameter("description", "string", "Workflow description"),
+            ToolParameter("user_id", "string", "User identifier", examples=["user_123"]),
+            ToolParameter("file_name", "string", "Dataset file name", examples=["sales_data.csv"]),
+            ToolParameter("description", "string", "Workflow description", examples=["Quarterly sales report"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -50,8 +50,8 @@ class WorkflowPreprocessTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("workflow_id", "string", "Workflow ID", required=True),
-            ToolParameter("dataset_id", "string", "Dataset to preprocess", required=True),
+            ToolParameter("workflow_id", "string", "Workflow ID", required=True, examples=["wf_abc123"]),
+            ToolParameter("dataset_id", "string", "Dataset to preprocess", required=True, examples=["sales_2024"]),
             ToolParameter("config", "object", "Preprocessing config"),
         ]
     
@@ -96,8 +96,8 @@ class WorkflowEnrichTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("workflow_id", "string", "Workflow ID", required=True),
-            ToolParameter("dataset_id", "string", "Dataset to enrich", required=True),
+            ToolParameter("workflow_id", "string", "Workflow ID", required=True, examples=["wf_abc123"]),
+            ToolParameter("dataset_id", "string", "Dataset to enrich", required=True, examples=["sales_2024"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -136,8 +136,8 @@ class WorkflowAnalyzeTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("workflow_id", "string", "Workflow ID", required=True),
-            ToolParameter("dataset_id", "string", "Dataset to analyze", required=True),
+            ToolParameter("workflow_id", "string", "Workflow ID", required=True, examples=["wf_abc123"]),
+            ToolParameter("dataset_id", "string", "Dataset to analyze", required=True, examples=["sales_2024"]),
             ToolParameter("intent", "object", "Analysis intent"),
         ]
     
@@ -175,7 +175,7 @@ class WorkflowGenerateOutputsTool(BaseTool):
     category = "workflow"
     
     def get_parameters(self) -> List[ToolParameter]:
-        return [ToolParameter("workflow_id", "string", "Workflow ID", required=True)]
+        return [ToolParameter("workflow_id", "string", "Workflow ID", required=True, examples=["wf_abc123"])]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         if not session:
@@ -200,7 +200,7 @@ class GetWorkflowStatusTool(BaseTool):
     category = "workflow"
     
     def get_parameters(self) -> List[ToolParameter]:
-        return [ToolParameter("workflow_id", "string", "Workflow ID", required=True)]
+        return [ToolParameter("workflow_id", "string", "Workflow ID", required=True, examples=["wf_abc123"])]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         if not session:

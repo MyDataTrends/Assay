@@ -67,8 +67,8 @@ class DetectAnomaliesTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("columns", "array", "Columns to check", items={"type": "string"}),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp", "sales_2024"]),
+            ToolParameter("columns", "array", "Columns to check", items={"type": "string"}, examples=[["price", "revenue"]]),
             ToolParameter("method", "string", "Detection method", enum=["iqr", "zscore"], default="iqr"),
         ]
     
@@ -111,7 +111,7 @@ class RunCorrelationAnalysisTool(BaseTool):
     category = "analysis"
     
     def get_parameters(self) -> List[ToolParameter]:
-        return [ToolParameter("dataset_id", "string", "Dataset ID", required=True)]
+        return [ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp", "sales_2024"])]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         import pandas as pd
@@ -147,10 +147,10 @@ class ClusterDataTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp"]),
             ToolParameter("n_clusters", "number", "Number of clusters", default=3),
-            ToolParameter("columns", "array", "Columns to use", items={"type": "string"}),
-            ToolParameter("save_as", "string", "Save clustered dataset as"),
+            ToolParameter("columns", "array", "Columns to use", items={"type": "string"}, examples=[["price", "quantity"]]),
+            ToolParameter("save_as", "string", "Save clustered dataset as", examples=["clustered_sales"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -200,8 +200,8 @@ class ForecastTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("target", "string", "Target column", required=True),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp"]),
+            ToolParameter("target", "string", "Target column", required=True, examples=["value", "revenue"]),
             ToolParameter("periods", "number", "Periods to forecast", default=10),
         ]
     
@@ -245,9 +245,9 @@ class RunClassificationTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("target", "string", "Target column", required=True),
-            ToolParameter("features", "array", "Feature columns", items={"type": "string"}),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["sales_2024"]),
+            ToolParameter("target", "string", "Target column", required=True, examples=["churn", "category"]),
+            ToolParameter("features", "array", "Feature columns", items={"type": "string"}, examples=[["age", "income", "tenure"]]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -300,9 +300,9 @@ class RunRegressionTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("target", "string", "Target column", required=True),
-            ToolParameter("features", "array", "Feature columns", items={"type": "string"}),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp"]),
+            ToolParameter("target", "string", "Target column", required=True, examples=["value", "price"]),
+            ToolParameter("features", "array", "Feature columns", items={"type": "string"}, examples=[["year", "month", "region"]]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -353,7 +353,7 @@ class ExplainPredictionsTool(BaseTool):
     category = "analysis"
     
     def get_parameters(self) -> List[ToolParameter]:
-        return [ToolParameter("model_id", "string", "Model ID", required=True)]
+        return [ToolParameter("model_id", "string", "Model ID", required=True, examples=["model_abc123"])]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         import pandas as pd

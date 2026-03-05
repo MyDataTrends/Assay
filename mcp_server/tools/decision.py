@@ -19,8 +19,8 @@ class DecideAnalysisTypeTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("query", "string", "Natural language query", required=True),
-            ToolParameter("dataset_id", "string", "Dataset ID for context"),
+            ToolParameter("query", "string", "Natural language query", required=True, examples=["show me a chart of sales", "predict next month revenue"]),
+            ToolParameter("dataset_id", "string", "Dataset ID for context", examples=["sales_2024"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -48,7 +48,7 @@ class ClassifyIntentTool(BaseTool):
     requires_session = False
     
     def get_parameters(self) -> List[ToolParameter]:
-        return [ToolParameter("query", "string", "Query to parse", required=True)]
+        return [ToolParameter("query", "string", "Query to parse", required=True, examples=["compare revenue by region", "find outliers in temperature"])]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         try:
@@ -68,7 +68,7 @@ class RouteAnalysisTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp"]),
             ToolParameter("hints", "object", "Routing hints"),
         ]
     
@@ -99,8 +99,8 @@ class AssessModelabilityTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("target_column", "string", "Target column"),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["sales_2024"]),
+            ToolParameter("target_column", "string", "Target column", examples=["revenue", "churn"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -130,8 +130,8 @@ class SuggestTargetVariableTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("context", "string", "What to predict"),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["sales_2024"]),
+            ToolParameter("context", "string", "What to predict", examples=["next quarter revenue"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:

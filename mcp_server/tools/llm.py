@@ -57,7 +57,7 @@ class LLMLoadTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("model_path", "string", "Path to GGUF model file", required=True),
+            ToolParameter("model_path", "string", "Path to GGUF model file", required=True, examples=["models/llama-3-8b.gguf"]),
             ToolParameter("n_ctx", "number", "Context window size", default=2048),
             ToolParameter("n_gpu_layers", "number", "GPU layers to offload", default=0),
         ]
@@ -107,7 +107,7 @@ class LLMChatTool(BaseTool):
             ToolParameter("messages", "array", "Chat messages", required=True, items={
                 "type": "object",
                 "properties": {"role": {"type": "string"}, "content": {"type": "string"}}
-            }),
+            }, examples=[[{"role": "user", "content": "hello"}]]),
             ToolParameter("max_tokens", "number", "Max tokens to generate", default=256),
             ToolParameter("temperature", "number", "Sampling temperature", default=0.7),
         ]
@@ -140,7 +140,7 @@ class LLMCompleteTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("prompt", "string", "Prompt text", required=True),
+            ToolParameter("prompt", "string", "Prompt text", required=True, examples=["Once upon a time"]),
             ToolParameter("max_tokens", "number", "Max tokens", default=256),
             ToolParameter("temperature", "number", "Temperature", default=0.7),
         ]

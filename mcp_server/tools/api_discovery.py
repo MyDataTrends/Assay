@@ -72,6 +72,7 @@ class SearchDataSourcesTool(BaseTool):
                 "query", "string",
                 "Natural language description of the data you need",
                 required=True,
+                examples=["US unemployment trends by county", "AAPL stock price"]
             ),
             ToolParameter(
                 "limit", "integer",
@@ -166,6 +167,7 @@ class ListAvailableAPIsTool(BaseTool):
                 "category", "string",
                 "Filter by category (economic, government, weather, news, health, geographic)",
                 required=False,
+                examples=["economic", "weather"]
             ),
             ToolParameter(
                 "auth_required", "boolean",
@@ -220,6 +222,7 @@ class GetAPIAuthInfoTool(BaseTool):
                 "api_id", "string",
                 "ID of the API to get auth info for (e.g., 'fred', 'alpha_vantage')",
                 required=True,
+                examples=["fred", "census"]
             ),
         ]
     
@@ -251,16 +254,19 @@ class StoreAPICredentialTool(BaseTool):
                 "api_id", "string",
                 "ID of the API (e.g., 'fred', 'alpha_vantage')",
                 required=True,
+                examples=["fred"]
             ),
             ToolParameter(
                 "api_key", "string",
                 "The API key to store",
                 required=True,
+                examples=["abcdef1234567890"]
             ),
             ToolParameter(
                 "master_password", "string",
                 "Password to encrypt the credential (remember this!)",
                 required=True,
+                examples=["my_secure_password"]
             ),
         ]
     

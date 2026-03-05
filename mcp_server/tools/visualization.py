@@ -53,8 +53,8 @@ class SuggestVisualizationsTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("question", "string", "Optional question context"),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp", "sales_2024"]),
+            ToolParameter("question", "string", "Optional question context", examples=["what drives revenue?"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -107,13 +107,13 @@ class CreateChartTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp", "sales_2024"]),
             ToolParameter("chart_type", "string", "Chart type", required=True,
                          enum=["bar", "line", "scatter", "histogram", "pie", "box", "heatmap"]),
-            ToolParameter("x", "string", "X-axis column"),
-            ToolParameter("y", "string", "Y-axis column"),
-            ToolParameter("color", "string", "Color by column"),
-            ToolParameter("title", "string", "Chart title"),
+            ToolParameter("x", "string", "X-axis column", examples=["date", "category"]),
+            ToolParameter("y", "string", "Y-axis column", examples=["value", "revenue"]),
+            ToolParameter("color", "string", "Color by column", examples=["region"]),
+            ToolParameter("title", "string", "Chart title", examples=["Sales by Region"]),
             ToolParameter("export_format", "string", "Output format",
                          enum=["plotly_json", "png_base64", "svg"],
                          default="plotly_json"),
@@ -177,8 +177,8 @@ class CreateCorrelationHeatmapTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("columns", "array", "Columns to include", items={"type": "string"}),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["sales_2024"]),
+            ToolParameter("columns", "array", "Columns to include", items={"type": "string"}, examples=[["price", "quantity", "revenue"]]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -229,8 +229,8 @@ class CreateDistributionPlotTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("dataset_id", "string", "Dataset ID", required=True),
-            ToolParameter("column", "string", "Column to plot", required=True),
+            ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp"]),
+            ToolParameter("column", "string", "Column to plot", required=True, examples=["value", "price"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:

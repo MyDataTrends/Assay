@@ -680,6 +680,7 @@ class DiscoverDataSourcesTool(BaseTool):
                 "scan_paths", "array", 
                 "List of directories to scan for data files",
                 items={"type": "string"},
+                examples=[["datasets", "data"]]
             ),
             ToolParameter(
                 "scan_env", "boolean",
@@ -690,6 +691,7 @@ class DiscoverDataSourcesTool(BaseTool):
                 "file_extensions", "array",
                 "File extensions to look for (default: csv, xlsx, parquet, json)",
                 items={"type": "string"},
+                examples=[["csv", "json"]]
             ),
         ]
     
@@ -744,7 +746,8 @@ class AnalyzeConnectionStringTool(BaseTool):
             ToolParameter(
                 "connection_string", "string",
                 "The connection string or file path to analyze",
-                required=True
+                required=True,
+                examples=["postgresql://localhost/db", "data.csv"]
             ),
         ]
     
@@ -778,7 +781,8 @@ class SuggestConnectionTool(BaseTool):
             ToolParameter(
                 "description", "string",
                 "Description of the data you need (e.g., 'sales data', 'customer records')",
-                required=True
+                required=True,
+                examples=["historical weather data"]
             ),
             ToolParameter(
                 "context", "object",
@@ -868,7 +872,8 @@ class ConnectFileTool(BaseTool):
             ToolParameter(
                 "path", "string",
                 "Path to the file to load",
-                required=True
+                required=True,
+                examples=["datasets/sales.csv"]
             ),
             ToolParameter(
                 "options", "object",
@@ -942,7 +947,8 @@ class ConnectDatabaseTool(BaseTool):
             ToolParameter(
                 "connection_string", "string",
                 "Database connection string (e.g., sqlite:///data.db, postgresql://...)",
-                required=True
+                required=True,
+                examples=["sqlite:///app.db"]
             ),
             ToolParameter(
                 "db_type", "string",
@@ -1133,12 +1139,14 @@ class ExecuteQueryTool(BaseTool):
             ToolParameter(
                 "connection_id", "string",
                 "ID of the database connection",
-                required=True
+                required=True,
+                examples=["postgres_db"]
             ),
             ToolParameter(
                 "query", "string",
                 "SQL query to execute",
-                required=True
+                required=True,
+                examples=["SELECT * FROM sales LIMIT 10"]
             ),
             ToolParameter(
                 "limit", "number",
@@ -1147,7 +1155,8 @@ class ExecuteQueryTool(BaseTool):
             ),
             ToolParameter(
                 "save_as", "string",
-                "Dataset ID to save results as (optional)"
+                "Dataset ID to save results as (optional)",
+                examples=["recent_sales"]
             ),
         ]
     
@@ -1211,7 +1220,8 @@ class FetchAPIDataTool(BaseTool):
             ToolParameter(
                 "connection_id", "string",
                 "ID of the API connection",
-                required=True
+                required=True,
+                examples=["fred_api"]
             ),
             ToolParameter(
                 "endpoint", "string",
@@ -1231,11 +1241,13 @@ class FetchAPIDataTool(BaseTool):
             ),
             ToolParameter(
                 "save_as", "string",
-                "Dataset ID to save results as"
+                "Dataset ID to save results as",
+                examples=["gdp_data"]
             ),
             ToolParameter(
                 "context", "string",
-                "Semantic context (why this data is being fetched)"
+                "Semantic context (why this data is being fetched)",
+                examples=["historical gdp trends"]
             ),
         ]
     
@@ -1316,11 +1328,13 @@ class InferSchemaTool(BaseTool):
             ToolParameter(
                 "connection_id", "string",
                 "ID of the connection",
-                required=True
+                required=True,
+                examples=["postgres_db"]
             ),
             ToolParameter(
                 "target", "string",
-                "Table name or specific target (optional, infer all if not specified)"
+                "Table name or specific target (optional, infer all if not specified)",
+                examples=["users"]
             ),
         ]
     
@@ -1391,7 +1405,8 @@ class TestConnectionTool(BaseTool):
             ToolParameter(
                 "connection_id", "string",
                 "ID of the connection to test",
-                required=True
+                required=True,
+                examples=["postgres_db"]
             ),
         ]
     
@@ -1448,7 +1463,8 @@ class ProfileDataSourceTool(BaseTool):
             ToolParameter(
                 "dataset_id", "string",
                 "ID of the loaded dataset to profile",
-                required=True
+                required=True,
+                examples=["sales_2024"]
             ),
         ]
     

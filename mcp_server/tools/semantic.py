@@ -48,7 +48,8 @@ class SemanticAnalyzeDatasetsTool(BaseTool):
                 "dataset_ids", "array",
                 "List of dataset IDs to analyze",
                 items={"type": "string"},
-                required=True
+                required=True,
+                examples=[["sales_2023", "sales_2024"]]
             ),
         ]
     
@@ -272,24 +273,28 @@ class SemanticMergeTool(BaseTool):
             ToolParameter(
                 "left_dataset", "string",
                 "Left dataset ID",
-                required=True
+                required=True,
+                examples=["customers"]
             ),
             ToolParameter(
                 "right_dataset", "string",
                 "Right dataset ID",
-                required=True
+                required=True,
+                examples=["orders"]
             ),
             ToolParameter(
                 "left_on", "array",
                 "Columns from left dataset to merge on",
                 items={"type": "string"},
-                required=True
+                required=True,
+                examples=[["customer_id"]]
             ),
             ToolParameter(
                 "right_on", "array",
                 "Columns from right dataset to merge on",
                 items={"type": "string"},
-                required=True
+                required=True,
+                examples=[["user_id"]]
             ),
             ToolParameter(
                 "how", "string",
@@ -300,7 +305,8 @@ class SemanticMergeTool(BaseTool):
             ToolParameter(
                 "save_as", "string",
                 "Dataset ID to save merged result",
-                required=True
+                required=True,
+                examples=["customers_with_orders"]
             ),
         ]
     
@@ -385,7 +391,8 @@ class SemanticScoreSimilarityTool(BaseTool):
                 "dataset_ids", "array",
                 "List of dataset IDs to compare",
                 items={"type": "string"},
-                required=True
+                required=True,
+                examples=[["dataset_a", "dataset_b"]]
             ),
         ]
     
@@ -463,11 +470,13 @@ class SemanticEnrichTool(BaseTool):
             ToolParameter(
                 "dataset_id", "string",
                 "Dataset ID to enrich",
-                required=True
+                required=True,
+                examples=["sales_2024"]
             ),
             ToolParameter(
                 "category", "string",
-                "Category hint for finding relevant data (e.g., 'demographic', 'geographic')"
+                "Category hint for finding relevant data (e.g., 'demographic', 'geographic')",
+                examples=["economic"]
             ),
             ToolParameter(
                 "datalake_path", "string",

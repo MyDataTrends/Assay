@@ -51,20 +51,20 @@ class SubmitRatingTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("run_id", "string", "Run/result ID to rate", required=True),
-            ToolParameter("rating", "number", "Rating 1-5", required=True),
-            ToolParameter("comment", "string", "Optional feedback comment"),
+            ToolParameter("tool_name", "string", "Tool that produced result", required=True, examples=["create_chart", "detect_anomalies"]),
+            ToolParameter("rating", "number", "Rating 1-5", required=True, examples=[4]),
+            ToolParameter("comment", "string", "Optional feedback", examples=["chart was helpful"]),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         conn = _get_db()
         conn.execute(
             "INSERT INTO ratings (run_id, rating, comment, created_at, metadata) VALUES (?, ?, ?, ?, ?)",
-            (arguments["run_id"], arguments["rating"], arguments.get("comment"),
+            (arguments["tool_name"], arguments["rating"], arguments.get("comment"),
              datetime.utcnow().isoformat(), json.dumps({"session": session.session_id if session else None}))
         )
         conn.commit()
-        return success_response({"recorded": True, "run_id": arguments["run_id"]})
+        return success_response({"recorded": True, "run_id": arguments["tool_name"]})
 
 
 class GetRatingsTool(BaseTool):
@@ -103,9 +103,10 @@ class LogDecisionTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("decision_type", "string", "Type of decision", required=True),
-            ToolParameter("query", "string", "Original query"),
-            ToolParameter("result", "object", "Decision result"),
+            ToolParameter("decision", "string", "Decision made", required=True, examples=["chose bar chart over pie chart"]),
+            ToolParameter("reasoning", "string", "Why this decision", required=True, examples=["data has many categories"]),
+            ToolParameter("alternatives", "array", "Other options considered", items={"type": "string"}, examples=[["pie chart", "table"]]),
+            ToolParameter("context", "object", "Decision context"),
             ToolParameter("success", "boolean", "Whether it succeeded", default=True),
             ToolParameter("duration_ms", "number", "Execution time"),
         ]
@@ -114,7 +115,7 @@ class LogDecisionTool(BaseTool):
         conn = _get_db()
         conn.execute(
             "INSERT INTO decisions (decision_type, query, result, success, duration_ms, created_at, session_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (arguments["decision_type"], arguments.get("query"), json.dumps(arguments.get("result")),
+            (arguments["decision"], arguments.get("reasoning"), json.dumps({"alternatives": arguments.get("alternatives"), "context": arguments.get("context")}),
              1 if arguments.get("success", True) else 0, arguments.get("duration_ms"),
              datetime.utcnow().isoformat(), session.session_id if session else None)
         )
@@ -129,9 +130,9 @@ class LogFailureTool(BaseTool):
     
     def get_parameters(self) -> List[ToolParameter]:
         return [
-            ToolParameter("operation", "string", "Failed operation name", required=True),
-            ToolParameter("error", "string", "Error message", required=True),
-            ToolParameter("context", "object", "Context data"),
+            ToolParameter("tool_name", "string", "Tool that failed", required=True, examples=["forecast"]),
+            ToolParameter("error", "string", "Error message", required=True, examples=["insufficient data points"]),
+            ToolParameter("context", "object", "Failure context"),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:

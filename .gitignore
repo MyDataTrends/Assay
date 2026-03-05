@@ -87,3 +87,8 @@ models/
 
 # === User Data ===
 User_Data/
+
+# === Test Outputs & Caches ===
+test_err.txt
+tests_output.txt
+mcp_data/session_cache/
