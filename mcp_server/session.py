@@ -234,10 +234,29 @@ class SessionManager:
         session_id: Optional[str] = None,
         user_id: Optional[str] = None
     ) -> MCPSession:
-        """Get existing session or create new one."""
+        """Get existing session or create new one.
+        
+        When a session_id is supplied (e.g. "default" from single-user mode)
+        but doesn't exist yet, we pin the new session to that exact ID so
+        subsequent lookups with the same key will hit.
+        """
         if session_id:
             session = self.get_session(session_id)
             if session:
+                return session
+            # Create a session pinned to the requested ID
+            with self._lock:
+                self._cleanup_expired()
+                if len(self._sessions) >= self.max_sessions:
+                    oldest = min(
+                        self._sessions.values(),
+                        key=lambda s: s.last_accessed,
+                    )
+                    del self._sessions[oldest.session_id]
+                    logger.warning(f"Evicted session {oldest.session_id} due to capacity")
+                session = MCPSession(session_id=session_id, user_id=user_id)
+                self._sessions[session_id] = session
+                logger.info(f"Created pinned session {session_id}")
                 return session
         return self.create_session(user_id=user_id)
     

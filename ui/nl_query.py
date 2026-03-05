@@ -355,7 +355,8 @@ Code:"""
                 exec(code, namespace)
                 
                 if namespace.get("fig"):
-                    st.plotly_chart(namespace["fig"], width="stretch")
+                    st.plotly_chart(namespace["fig"], width="stretch",
+                                     key=f"nlchart_{hash(description)}")
                     
                     # Implicit Logging
                     _, _, logger = init_learning_system()

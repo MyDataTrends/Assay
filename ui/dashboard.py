@@ -121,6 +121,16 @@ def _hash_df(df: pd.DataFrame) -> str:
     return hashlib.sha1(data).hexdigest()
 
 
+def _persist_dataset(name: str, df: pd.DataFrame):
+    """Save dataset to Parquet cache for crash recovery."""
+    try:
+        cache_dir = Path("mcp_data/session_cache")
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(cache_dir / f"{name}.parquet", index=False)
+    except Exception:
+        pass  # Non-critical — best-effort persistence
+
+
 def _available_identifiers(df: pd.DataFrame, dest_dir: str = "metadata") -> list:
     h = _hash_df(df)
     path = Path(dest_dir)
@@ -258,6 +268,19 @@ if "datasets" not in st.session_state:
 if "primary_dataset_id" not in st.session_state:
     st.session_state["primary_dataset_id"] = None
 
+# Auto-restore datasets from Parquet cache (crash recovery)
+if not st.session_state["datasets"]:
+    _cache_dir = Path("mcp_data/session_cache")
+    if _cache_dir.exists():
+        for _pq in _cache_dir.glob("*.parquet"):
+            try:
+                st.session_state["datasets"][_pq.stem] = pd.read_parquet(_pq)
+            except Exception:
+                pass
+        if st.session_state["datasets"]:
+            st.session_state["primary_dataset_id"] = list(st.session_state["datasets"].keys())[0]
+            st.toast("♻️ Restored datasets from previous session")
+
 if st.session_state["datasets"]:
     active_ds = st.session_state["primary_dataset_id"] or list(st.session_state["datasets"].keys())[0]
     if active_ds not in st.session_state["datasets"]:
@@ -373,6 +396,7 @@ with analyze_tab:
                             _df = standardize_dataframe(_df)
                             st.session_state["datasets"]["Sample Sales"] = _df
                             st.session_state["primary_dataset_id"] = "Sample Sales"
+                            _persist_dataset("Sample Sales", _df)
                             st.rerun()
                         else:
                             st.error(f"Sample data not found at {sample_path}")
@@ -474,7 +498,8 @@ with analyze_tab:
                     if "data" in metadata and metadata["data"] is not None:
                         msg_data = metadata["data"]
                         if hasattr(msg_data, 'show'):
-                            st.plotly_chart(msg_data, width="stretch")
+                            st.plotly_chart(msg_data, width="stretch",
+                                            key=f"chat_fig_{i}")
                         elif isinstance(msg_data, pd.DataFrame):
                             st.dataframe(msg_data)
                         else:
@@ -528,7 +553,8 @@ with analyze_tab:
                                         dataset=primary_id,
                                         code=code,
                                     )
-                                    st.plotly_chart(fig, width="stretch")
+                                    st.plotly_chart(fig, width="stretch",
+                                                    key=f"viz_{hash(prompt)}")
                                     ctx.add_message("assistant", "Here's your visualization:", metadata={"data": fig})
                                     if interaction_logger:
                                         interaction_logger.log(
@@ -860,6 +886,7 @@ with data_tab:
                             df = pd.read_csv(f)
                             df = standardize_dataframe(df)
                             st.session_state["datasets"][name] = df
+                            _persist_dataset(name, df)
                             if "dataset_paths" not in st.session_state:
                                 st.session_state["dataset_paths"] = {}
                             st.session_state["dataset_paths"][name] = str(file_path.absolute())
@@ -889,6 +916,7 @@ with data_tab:
                                     if not df.empty:
                                         st.session_state["datasets"][f"FRED_{s_id}"] = df
                                         st.session_state["primary_dataset_id"] = f"FRED_{s_id}"
+                                        _persist_dataset(f"FRED_{s_id}", df)
                                         loaded_count += 1
                                 except Exception as e:
                                     st.error(f"Could not load {s_id}: {e}")

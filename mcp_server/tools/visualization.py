@@ -15,6 +15,37 @@ viz_category.name = "visualization"
 viz_category.description = "Chart generation and visualization tools"
 
 
+def _export_fig(fig, export_format: str, chart_id: str, extra: dict = None):
+    """Shared helper to export a Plotly figure in the requested format."""
+    result = {"chart_id": chart_id}
+    if extra:
+        result.update(extra)
+
+    fmt = (export_format or "plotly_json").lower()
+    if fmt == "plotly_json":
+        result["plotly_json"] = fig.to_json()
+    elif fmt in ("png_base64", "svg"):
+        img_fmt = "png" if fmt == "png_base64" else "svg"
+        try:
+            img_bytes = fig.to_image(format=img_fmt)
+            if img_fmt == "png":
+                result["png_base64"] = base64.b64encode(img_bytes).decode()
+            else:
+                result["svg"] = img_bytes.decode("utf-8")
+        except Exception as e:
+            err = str(e)
+            if "kaleido" in err.lower() or "orca" in err.lower():
+                return error_response(
+                    f"Image export requires kaleido: pip install kaleido.  "
+                    f"Falling back to plotly_json."
+                )
+            return error_response(f"Image export failed: {e}")
+    else:
+        result["plotly_json"] = fig.to_json()
+
+    return success_response(result)
+
+
 class SuggestVisualizationsTool(BaseTool):
     name = "suggest_visualizations"
     description = "Get AI-recommended visualizations for a dataset based on its structure."
@@ -83,6 +114,9 @@ class CreateChartTool(BaseTool):
             ToolParameter("y", "string", "Y-axis column"),
             ToolParameter("color", "string", "Color by column"),
             ToolParameter("title", "string", "Chart title"),
+            ToolParameter("export_format", "string", "Output format",
+                         enum=["plotly_json", "png_base64", "svg"],
+                         default="plotly_json"),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -130,12 +164,8 @@ class CreateChartTool(BaseTool):
                 "type": chart_type, "x": x, "y": y, "title": title
             })
             
-            return success_response({
-                "chart_id": chart_id,
-                "type": chart_type,
-                "title": title,
-                "plotly_json": fig.to_json(),
-            })
+            return _export_fig(fig, arguments.get("export_format", "plotly_json"),
+                               chart_id, {"type": chart_type, "title": title})
         except Exception as e:
             return error_response(f"Chart creation failed: {e}")
 
@@ -247,6 +277,9 @@ class CreateTimeSeriesPlotTool(BaseTool):
             ToolParameter("dataset_id", "string", "Dataset ID", required=True, examples=["fred_gdp"]),
             ToolParameter("time_col", "string", "Time/date column name", required=True, examples=["date", "observation_date", "timestamp"]),
             ToolParameter("value_col", "string", "Value column to plot", required=True, examples=["value", "price", "amount"]),
+            ToolParameter("export_format", "string", "Output format",
+                         enum=["plotly_json", "png_base64", "svg"],
+                         default="plotly_json"),
         ]
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
@@ -267,7 +300,7 @@ class CreateTimeSeriesPlotTool(BaseTool):
             chart_id = f"ts_{uuid.uuid4().hex[:8]}"
             session.add_chart(chart_id, fig.to_dict(), {"type": "time_series"})
             
-            return success_response({"chart_id": chart_id, "plotly_json": fig.to_json()})
+            return _export_fig(fig, arguments.get("export_format", "plotly_json"), chart_id)
         except ImportError:
             return error_response("Plotly required")
 

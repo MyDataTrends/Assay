@@ -565,7 +565,16 @@ class RESTConnector(BaseConnector):
                 params = {}
             params[key] = val
 
-        url = f"{connection['base_url']}/{query_or_path.lstrip('/')}"
+
+        # Guard: strip leading path segment that duplicates the base_url suffix
+        # e.g. base="…/fred", path="fred/series/…" → "…/fred/series/…"
+        from urllib.parse import urlparse
+        base_path_tail = urlparse(connection['base_url']).path.rstrip('/').rsplit('/', 1)[-1]
+        stripped_path = query_or_path.lstrip('/')
+        if base_path_tail and stripped_path.startswith(base_path_tail + '/'):
+            stripped_path = stripped_path[len(base_path_tail) + 1:]
+            logger.info(f"Stripped duplicate prefix '{base_path_tail}/' from endpoint")
+        url = f"{connection['base_url']}/{stripped_path}"
         
         try:
             if method.upper() == "GET":
@@ -1485,6 +1494,156 @@ class ProfileDataSourceTool(BaseTool):
         return success_response(profile)
 
 
+# =============================================================================
+# Meta-tools: suggest_tool
+# =============================================================================
+
+class SuggestToolTool(BaseTool):
+    name = "suggest_tool"
+    description = (
+        "Find the best MCP tool for a task. Accepts a natural language "
+        "description and returns the top matching tools with full schemas."
+    )
+    category = "meta"
+    requires_session = False
+
+    def get_parameters(self) -> List[ToolParameter]:
+        return [
+            ToolParameter(
+                "query", "string",
+                "Natural language description of what you want to do",
+                required=True,
+                examples=["plot GDP over time", "connect to FRED API", "run a forecast"],
+            ),
+        ]
+
+    async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
+        from mcp_server.tools import _tool_categories
+
+        query = arguments["query"].lower()
+        keywords = set(query.split())
+
+        scored = []
+        for cat in _tool_categories.values():
+            for tool in cat.get_tools():
+                text = f"{tool.name} {tool.description} {tool.category}".lower()
+                overlap = len(keywords & set(text.split()))
+                # Boost partial matches in name/description
+                partial = sum(1 for kw in keywords if kw in text)
+                score = overlap * 2 + partial
+                if score > 0:
+                    scored.append((score, tool))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        top = scored[:3]
+
+        if not top:
+            return success_response({
+                "matches": [],
+                "hint": "No matching tools found. Try broader keywords.",
+            })
+
+        matches = []
+        for _score, tool in top:
+            params = tool.get_parameters()
+            matches.append({
+                "name": tool.name,
+                "description": tool.description,
+                "category": tool.category,
+                "parameters": [
+                    {"name": p.name, "type": p.type, "required": p.required,
+                     "description": p.description}
+                    for p in params
+                ],
+            })
+
+        return success_response({"matches": matches})
+
+
+# =============================================================================
+# Convenience tools: fetch_fred_series
+# =============================================================================
+
+class FetchFredSeriesTool(BaseTool):
+    name = "fetch_fred_series"
+    description = (
+        "Fetch a FRED economic data series in one call. "
+        "Just provide a series ID (e.g. GDP, UNRATE, CPIAUCSL) and "
+        "the tool handles API connection, endpoint construction, and "
+        "dataset storage automatically."
+    )
+    category = "connectors"
+
+    def get_parameters(self) -> List[ToolParameter]:
+        return [
+            ToolParameter(
+                "series_id", "string",
+                "FRED series ID",
+                required=True,
+                examples=["GDP", "UNRATE", "CPIAUCSL", "PAYEMS"],
+            ),
+            ToolParameter("start_date", "string", "Start date (YYYY-MM-DD)", required=False),
+            ToolParameter("end_date", "string", "End date (YYYY-MM-DD)", required=False),
+        ]
+
+    async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
+        import os, requests, pandas as pd
+
+        series_id = arguments["series_id"].upper()
+        api_key = os.environ.get("FRED_API_KEY")
+        if not api_key:
+            return error_response(
+                "FRED_API_KEY not set.  "
+                "Get one at https://fred.stlouisfed.org/docs/api/api_key.html "
+                "and set it as an environment variable."
+            )
+
+        params = {
+            "series_id": series_id,
+            "api_key": api_key,
+            "file_type": "json",
+        }
+        if arguments.get("start_date"):
+            params["observation_start"] = arguments["start_date"]
+        if arguments.get("end_date"):
+            params["observation_end"] = arguments["end_date"]
+
+        url = "https://api.stlouisfed.org/fred/series/observations"
+        try:
+            resp = requests.get(url, params=params, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            return error_response(f"FRED API request failed: {e}")
+
+        observations = data.get("observations", [])
+        if not observations:
+            return error_response(f"No observations returned for series '{series_id}'")
+
+        df = pd.DataFrame(observations)
+        # Clean up: convert date, make value numeric
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        if "value" in df.columns:
+            df["value"] = pd.to_numeric(df["value"], errors="coerce")
+
+        dataset_id = f"fred_{series_id.lower()}"
+        if session:
+            session.add_dataset(dataset_id, df)
+
+        return success_response({
+            "dataset_id": dataset_id,
+            "series_id": series_id,
+            "rows": len(df),
+            "columns": list(df.columns),
+            "date_range": {
+                "start": str(df["date"].min()) if "date" in df.columns else None,
+                "end": str(df["date"].max()) if "date" in df.columns else None,
+            },
+            "sample": df.head(3).to_dict(orient="records"),
+        })
+
+
 # Register all tools
 connector_category.register(DiscoverDataSourcesTool())
 connector_category.register(AnalyzeConnectionStringTool())
@@ -1498,5 +1657,13 @@ connector_category.register(InferSchemaTool())
 connector_category.register(ListConnectionsTool())
 connector_category.register(TestConnectionTool())
 connector_category.register(ProfileDataSourceTool())
+connector_category.register(FetchFredSeriesTool())
+
+# Meta-tools use their own category
+meta_category = ToolCategory()
+meta_category.name = "meta"
+meta_category.description = "Tools for discovering and navigating available tools"
+meta_category.register(SuggestToolTool())
+register_category(meta_category)
 
 register_category(connector_category)

@@ -283,7 +283,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
                                 fig = px.line(df, x=x, y=y if y in df.columns else None, title=sug.get('title', ''))
                             
                             fig.update_layout(template="plotly_dark")
-                            st.plotly_chart(fig, width="stretch")
+                            st.plotly_chart(fig, width="stretch", key=f"sug_chart_{i}")
             else:
                 st.info("💡 LLM couldn't parse chart suggestions. This usually means the model needs to be loaded first.\n\n**Try:** Go to '🤖 LLM Settings' tab and click 'Load Model', then try again.")
         else:
@@ -316,7 +316,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
-            st.plotly_chart(fig_hist, width="stretch")
+            st.plotly_chart(fig_hist, width="stretch", key=f"hist_{dist_col}")
         
         with col2:
             # Box plot
@@ -330,7 +330,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
-            st.plotly_chart(fig_box, width="stretch")
+            st.plotly_chart(fig_box, width="stretch", key=f"box_{dist_col}")
         
         # AI insight for selected column
         if st.button(f"🤖 Get AI Insight for {dist_col}", key="col_insight"):
@@ -365,7 +365,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
                 yaxis_title="Count",
                 showlegend=False
             )
-            st.plotly_chart(fig_bar, width="stretch")
+            st.plotly_chart(fig_bar, width="stretch", key=f"bar_{cat_col}")
         
         with col2:
             fig_pie = px.pie(
@@ -379,7 +379,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
-            st.plotly_chart(fig_pie, width="stretch")
+            st.plotly_chart(fig_pie, width="stretch", key=f"pie_{cat_col}")
     
     # Correlation heatmap
     if len(numeric_cols) >= 2:
@@ -399,7 +399,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig_corr, width="stretch")
+        st.plotly_chart(fig_corr, width="stretch", key="corr_heatmap")
         
         # AI correlation insight
         if st.button("🤖 Explain Correlations", key="corr_insight"):
@@ -434,7 +434,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig_scatter, width="stretch")
+        st.plotly_chart(fig_scatter, width="stretch", key=f"scatter_{x_col}_{y_col}")
     
     # Time series if datetime column exists
     if datetime_cols and numeric_cols:
@@ -459,7 +459,7 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig_time, width="stretch")
+        st.plotly_chart(fig_time, width="stretch", key=f"timeseries_{time_col}_{value_col}")
     
     # Data quality summary
     st.markdown("### Data Quality")

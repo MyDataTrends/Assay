@@ -115,7 +115,18 @@ class BaseTool(ABC):
         arguments: Dict[str, Any],
         session: Optional[Any] = None
     ) -> Any:
-        """Allow tools to be called directly."""
+        """Allow tools to be called directly, with parameter validation."""
+        # Validate required params before execution
+        for param in self.get_parameters():
+            if param.required and param.name not in arguments:
+                expected = ', '.join(
+                    f"{p.name} ({p.type}{'*' if p.required else ''})"
+                    for p in self.get_parameters()
+                )
+                return error_response(
+                    f"Missing required parameter '{param.name}'. "
+                    f"Expected parameters: {expected}"
+                )
         return await self.execute(arguments, session=session)
     
     def to_definition(self) -> "ToolDefinition":

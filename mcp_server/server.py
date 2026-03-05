@@ -56,6 +56,7 @@ class ToolDefinition:
             "name": self.name,
             "description": self.description,
             "inputSchema": self.input_schema,
+            "category": self.category,
         }
 
 
@@ -596,7 +597,11 @@ class MCPServer:
     async def _tools_handler(self, request) -> "web.Response":
         """Handle tools listing requests."""
         from aiohttp import web
-        return web.json_response({"tools": self.list_tools()})
+        grouped = {}
+        for tool in self._tools.values():
+            cat = tool.category or "general"
+            grouped.setdefault(cat, []).append(tool.to_dict())
+        return web.json_response({"tools": self.list_tools(), "by_category": grouped})
     
     def stop(self) -> None:
         """Stop the server."""
