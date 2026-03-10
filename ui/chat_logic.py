@@ -42,6 +42,19 @@ def get_llm_response(prompt: str, max_tokens: int = 1024) -> str:
         print(f"LLM Error: {e}")
     return ""
 
+def count_tokens(text: str, model_name: str = "gpt-4o") -> int:
+    """Safely count tokens in a string using tiktoken."""
+    try:
+        import tiktoken
+        encoding = tiktoken.encoding_for_model(model_name)
+        return len(encoding.encode(text))
+    except ImportError:
+        # Fallback approximation (roughly 4 chars per token for English)
+        return len(text) // 4
+    except Exception as e:
+        logger.warning(f"Token counting failed: {e}")
+        return len(text) // 4
+
 
 def is_llm_ready() -> bool:
     """Check if LLM is available."""
@@ -195,9 +208,10 @@ def should_use_cascade(query: str) -> bool:
             Intent.VISUALIZE,
             Intent.FILTER,
             Intent.AGGREGATE,
+            Intent.TRANSFORM,
         }
         
-        if intent in cascade_intents and confidence >= 0.8:
+        if intent in cascade_intents and confidence >= 0.6:
             return True
             
         # Fallback keyword detection for visualization if confidence is low
@@ -329,7 +343,7 @@ Generate ONLY the Python code (no markdown, no explanation). The code must be va
 
 Code:"""
     
-    return get_llm_response(prompt, max_tokens=500)
+    return get_llm_response(prompt, max_tokens=1500)
 
 
 def generate_visualization_code(df: pd.DataFrame, query: str, context: str = "", datasets: Optional[Dict[str, pd.DataFrame]] = None) -> str:
@@ -365,7 +379,7 @@ Generate ONLY Python code to create a Plotly visualization.
 1. The code must be valid Python.
 2. Use 'df' for the primary dataset (or df = datasets['name'] if referring to others).
 3. Use plotly.express as 'px'.
-4. Store the figure in a variable named 'fig'.
+4. Store the figure in a variable named 'fig', OR if multiple figures, store them in a list named 'figs'.
 5. Use template="plotly_dark".
 6. Title the chart appropriately based on the data.
 7. DO NOT use multi-line f-strings.
@@ -373,7 +387,7 @@ Generate ONLY Python code to create a Plotly visualization.
 
 Code:"""
     
-    return get_llm_response(prompt, max_tokens=600)
+    return get_llm_response(prompt, max_tokens=1500)
 
 
 def safe_execute(code: str, df: pd.DataFrame, datasets: Optional[Dict[str, pd.DataFrame]] = None) -> tuple:
@@ -417,12 +431,18 @@ def safe_execute_viz(code: str, df: pd.DataFrame, datasets: Optional[Dict[str, p
         lines = code.split("\n")
         code = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
     
-    namespace = {"df": df, "pd": pd, "np": np, "px": px, "fig": None}
+    namespace = {"df": df, "pd": pd, "np": np, "px": px, "fig": None, "figs": []}
     if datasets:
         namespace["datasets"] = datasets
         
     try:
         exec(code, namespace)
+        
+        # Check for multiple figures first
+        figs = namespace.get("figs")
+        if figs and isinstance(figs, list) and len(figs) > 0:
+            return True, figs, None
+            
         return True, namespace.get("fig"), None
     except Exception as e:
         return False, None, str(e)
@@ -681,6 +701,11 @@ def generate_natural_answer(query: str, result: Any) -> str:
 
 QUESTION: {query}
 RESULT: {result}
+
+CRITICAL FORMATTING RULES:
+1. Always include a space between words and numbers/symbols (e.g., "sales of $6.09M").
+2. DO NOT squish numbers and text together like "6.09Mandahealthyprofit".
+3. Use standard markdown bolding/italics sparingly, do not use LaTeX or math formatting ($$).
 
 Answer in 1-2 clear sentences:"""
     

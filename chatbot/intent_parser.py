@@ -7,7 +7,15 @@ allowing more flexible matching when the dependency is installed.
 """
 
 import logging
+import warnings
 from typing import Dict, Tuple
+
+warnings.warn(
+    "chatbot.intent_parser is deprecated and will be removed. "
+    "Use orchestration.cascade_planner.classify_intent instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 from utils.logging import log_decision
 

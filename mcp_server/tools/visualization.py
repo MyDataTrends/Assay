@@ -65,37 +65,39 @@ class SuggestVisualizationsTool(BaseTool):
             return error_response("Dataset not found")
         
         suggestions = []
-        numeric = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
-        categorical = df.select_dtypes(include=['object', 'category']).columns.tolist()
-        datetime = df.select_dtypes(include=['datetime64']).columns.tolist()
-        
-        if len(numeric) >= 2:
-            suggestions.append({"type": "scatter", "x": numeric[0], "y": numeric[1], 
-                              "reason": "Compare two numeric variables"})
-            suggestions.append({"type": "heatmap", "columns": numeric[:5],
-                              "reason": "Show correlations between numeric columns"})
-        if numeric:
-            suggestions.append({"type": "histogram", "column": numeric[0],
-                              "reason": "Show distribution"})
-        if categorical and numeric:
-            suggestions.append({"type": "bar", "x": categorical[0], "y": numeric[0],
-                              "reason": "Compare categories"})
-        if datetime and numeric:
-            suggestions.append({"type": "line", "x": datetime[0], "y": numeric[0],
-                              "reason": "Time series trend"})
-        if categorical:
-            suggestions.append({"type": "pie", "column": categorical[0],
-                              "reason": "Show proportions"})
-        
-        # Try LLM suggestions
+        # 1. Use Smart Charts Rules Engine (Primary Architecture Path)
         try:
-            from llm_manager.llm_interface import suggest_visualizations, is_llm_available
-            if is_llm_available():
-                llm_suggestions = suggest_visualizations(df)
-                if llm_suggestions:
-                    suggestions = llm_suggestions + suggestions
-        except Exception:
-            pass
+            from visualization.smart_charts import recommend_charts
+            chart_recs = recommend_charts(df, max_recommendations=5)
+            # Format the dataclass objects into the expected JSON response
+            for rec in chart_recs:
+                sugg = {
+                    "type": rec.chart_type.value if hasattr(rec.chart_type, "value") else str(rec.chart_type),
+                    "reason": rec.reason,
+                    "confidence": rec.confidence
+                }
+                # Assign relevant columns based on the chart mapping
+                if rec.x_col: sugg["x"] = rec.x_col
+                if rec.y_col: sugg["y"] = rec.y_col
+                if rec.color_col: sugg["color"] = rec.color_col
+                suggestions.append(sugg)
+        except Exception as e:
+            logger.warning(f"Smart Charts failed: {e}")
+
+        # 2. LLM Fallback (Supplementary Path)
+        # Only query the LLM if Smart Charts failed or returned low confidence
+        if not suggestions or suggestions[0].get("confidence", 0) < 0.6:
+            try:
+                from llm_manager.llm_interface import suggest_visualizations, is_llm_available
+                if is_llm_available():
+                    llm_suggestions = suggest_visualizations(df)
+                    if llm_suggestions:
+                        # Append any new suggestions the LLM dreamt up
+                        for ls in llm_suggestions:
+                            if not any(s.get("type") == ls.get("type") for s in suggestions):
+                                suggestions.append(ls)
+            except Exception as e:
+                logger.warning(f"LLM visualization fallback failed: {e}")
         
         return success_response({"suggestions": suggestions[:6]})
 

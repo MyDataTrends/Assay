@@ -458,11 +458,10 @@ _context: Optional[SessionContext] = None
 
 
 def get_context() -> SessionContext:
-    """Get the global session context instance."""
-    global _context
-    if _context is None:
-        _context = SessionContext()
-    return _context
+    """Get the session context instance.
+    Must evaluate per-run to ensure st.session_state is properly initialized.
+    """
+    return SessionContext()
 
 
 # =============================================================================

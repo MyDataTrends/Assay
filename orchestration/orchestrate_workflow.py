@@ -28,6 +28,18 @@ from orchestration.orchestrator import orchestrate_dashboard
 
 configure_logging()
 
+import warnings
+
+warnings.warn(
+    "orchestrate_workflow is deprecated and will be removed in a future release. "
+    "Please migrate to the Cascade Planner architecture.\n"
+    "Migration Guide:\n"
+    "- orchestrate_dashboard() -> orchestration.cascade_planner.cascade_execute()\n"
+    "- metadata_parser heuristics -> orchestration.tool_registry._handle_data_profiler()\n"
+    "- intent classification -> orchestration.classify_intent()",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 def orchestrate_workflow(
     user_id: str | None = None,

@@ -8,7 +8,8 @@
       "Bash(git:*)",
       "Bash(wc:*)",
       "Bash(ls -lh /c/Projects/Assay/Assay/ui/*.py)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(grep -l \"def.*profile\\\\|describe\\\\|profile\" /c/Projects/Assay/Assay/preprocessing/*.py /c/Projects/Assay/Assay/orchestration/*.py /c/Projects/Assay/Assay/modeling/*.py 2>/dev/null)"
     ]
   }
 }

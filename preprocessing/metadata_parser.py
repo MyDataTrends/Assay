@@ -43,9 +43,22 @@ def parse_metadata(df: pd.DataFrame) -> dict:
             "n_unique": n_unique,
             "is_id": is_id,
         }
+    
+    # Identify numeric and categorical columns
+    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+
     return {
+        "shape": df.shape,
         "columns": df.columns.tolist(),
-        "dtypes": df.dtypes.apply(lambda x: x.name).to_dict(),
+        "dtypes": {col: str(dtype) for col, dtype in df.dtypes.items()},
+        "null_counts": df.isnull().sum().to_dict(),
+        "null_percentages": (df.isnull().sum() / len(df) * 100).round(2).to_dict(),
+        "memory_usage_mb": df.memory_usage(deep=True).sum() / 1024 / 1024,
+        "numeric_stats": df[numeric_cols].describe().to_dict() if numeric_cols else {},
+        "categorical_unique_counts": {col: df[col].nunique() for col in cat_cols} if cat_cols else {},
+        
+        # Legacy fields preserved to prevent breaking old pipeline components immediately
         "summary": limited.describe(include="all").to_dict(),
         "metadata": meta,
     }

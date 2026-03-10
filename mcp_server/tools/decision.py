@@ -52,10 +52,14 @@ class ClassifyIntentTool(BaseTool):
     
     async def execute(self, arguments: Dict[str, Any], session=None) -> Dict[str, Any]:
         try:
-            from chatbot.intent_parser import parse_intent
-            result = parse_intent(arguments["query"])
-            if result:
-                return success_response({"intent": result[0], "params": result[1]})
+            from orchestration.cascade_planner import classify_intent
+            intent, confidence = classify_intent(arguments["query"])
+            if intent:
+                return success_response({
+                    "intent": intent.value if hasattr(intent, "value") else str(intent), 
+                    "confidence": confidence,
+                    "params": {} # Cascade planner doesn't return params here, those are filled during planning
+                })
         except Exception:
             pass
         return success_response({"intent": "unknown", "params": {}})

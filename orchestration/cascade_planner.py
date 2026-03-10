@@ -126,18 +126,19 @@ INTENT_PATTERNS = {
         r"\b(trend|distribution|correlation)\b",
     ],
     Intent.FILTER: [
-        r"\b(filter|where|only|exclude|remove|keep)\b.*\b(rows?|records?|data)\b",
+        r"\b(filter|where|only|exclude|remove|keep)\b",
         r"\b(greater|less|equal|between|contains?|starts?|ends?)\b",
         r"\brows? where\b",
     ],
-    Intent.AGGREGATE: [
-        r"\b(group|aggregate|sum|count|average|avg|mean|total|by)\b",
-        r"\b(per|for each|breakdown)\b",
-    ],
     Intent.TRANSFORM: [
         r"\b(transform|clean|preprocess|prepare|modify|change|convert|rename|add|create)\b.*\b(column|data|field)\b",
-        r"\b(fill|handle|impute)\b.*\b(missing|null|na|nan)\b",
+        r"\b(fill|handle|impute)\b",
+        r"\b(missing|null|na|nan)\b",
         r"\b(normalize|scale|encode|one.?hot)\b",
+    ],
+    Intent.AGGREGATE: [
+        r"\b(group|aggregate|sum|count|average|avg|total|by)\b",
+        r"\b(per|for each|breakdown)\b",
     ],
     Intent.MODEL_TRAIN: [
         r"\b(train|build|create|fit)\b.*\b(model|classifier|regressor|predictor)\b",

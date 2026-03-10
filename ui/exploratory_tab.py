@@ -170,29 +170,35 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
         )
         
         if st.button("Suggest Visualizations", key="suggest_charts"):
-            with st.spinner("Analyzing your data..."):
-                if suggestion_mode == "Smart (Fast)":
+            with st.spinner("Finding the best charts for your data..."):
+                import time
+                time.sleep(0.5)  # Ensure spinner is visible to user
+                
+                if "Smart" in suggestion_mode:
                     # Use rule-based smart chart selection
                     try:
-                        from visualization.smart_charts import recommend_charts, render_recommendation
+                        from visualization.smart_charts import recommend_charts
                         recommendations = recommend_charts(df, max_recommendations=5)
+                        
+                        suggestions_list = []
+                        for rec in recommendations:
+                            suggestions_list.append({
+                                "type": rec.chart_type.value,
+                                "x": rec.x_col,
+                                "y": rec.y_col,
+                                "title": rec.title,
+                                "reason": rec.reason,
+                                "color": rec.color_col,
+                                "_recommendation": rec  # Keep original for rendering
+                            })
+                            
                         st.session_state["chart_suggestions"] = {
                             "model": "Smart Charts (Rule-based)",
-                            "suggestions": [
-                                {
-                                    "type": rec.chart_type.value,
-                                    "x": rec.x_col,
-                                    "y": rec.y_col,
-                                    "title": rec.title,
-                                    "reason": rec.reason,
-                                    "confidence": rec.confidence,
-                                    "color": rec.color_col,
-                                    "_recommendation": rec  # Keep original for rendering
-                                }
-                                for rec in recommendations
-                            ]
+                            "suggestions": suggestions_list
                         }
                     except Exception as e:
+                        import logging
+                        logging.error(f"Smart charts error: {e}")
                         st.session_state["chart_suggestions"] = {"error": f"Smart charts error: {e}"}
                 else:
                     # Use LLM-based suggestions
@@ -209,9 +215,11 @@ def render_exploratory_tab(df: pd.DataFrame, context: str = ""):
                                 "suggestions": suggestions
                             }
                     except ImportError as e:
-                        st.session_state["chart_suggestions"] = {"error": f"import: {e}"}
+                        st.session_state["chart_suggestions"] = {"error": f"Import error: {e}"}
                     except Exception as e:
-                        st.session_state["chart_suggestions"] = {"error": f"exception: {e}"}
+                        st.session_state["chart_suggestions"] = {"error": f"Error: {e}"}
+                
+                st.rerun()
         
         # Display persisted suggestions
         chart_data = st.session_state.get("chart_suggestions", {})

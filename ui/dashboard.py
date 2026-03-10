@@ -89,8 +89,6 @@ from ui.visualizations import (
     generate_pie_chart,
     generate_area_chart,
 )
-log_profile("Importing orchestrator core...")
-from orchestration.orchestrator import orchestrate_dashboard
 from orchestration.data_quality_scorer import summarize_for_display
 from ui import redaction_banner
 from ui.exploratory_tab import render_exploratory_tab
@@ -191,24 +189,8 @@ visualizations = {
     "area_chart": generate_area_chart,
 }
 
-
 def build_dashboard(data: pd.DataFrame, result: dict, target_column: str) -> dict:
-    model_output = {
-        "predictions": result.get("model_info", {}).get("predictions", []),
-        "confidence_score": result.get("model_info", {}).get("confidence_score", 80),
-    }
-    model_type = (
-        "time-series"
-        if data is not None and any("date" in col.lower() for col in data.columns)
-        else "generic"
-    )
-    try:
-        return orchestrate_dashboard(
-            data, model_output, model_type, target_column, {"general": {}}, "",
-        )
-    except RuntimeError:
-        return {}
-
+    return {}
 
 def generate_scenario(params):
     return f"Simulated scenario with adjustments: {params}"
@@ -220,7 +202,7 @@ def generate_scenario(params):
 
 st.title("Assay")
 st.caption("Local-first autonomous data analyst")
-redaction_banner()
+
 
 # ─────────────────────────────────────────────
 # Run history (unchanged loading logic)
@@ -239,6 +221,29 @@ else:
         run_history = json.loads(history_file.read_text())
     except Exception:
         run_history = []
+
+def load_ui_settings():
+    settings_file = Path(os.getenv("LOCAL_DATA_DIR", "local_data")) / "settings.json"
+    if settings_file.exists():
+        try:
+            return json.loads(settings_file.read_text())
+        except Exception:
+            return {}
+    return {}
+
+def save_ui_settings(settings):
+    settings_file = Path(os.getenv("LOCAL_DATA_DIR", "local_data")) / "settings.json"
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        settings_file.write_text(json.dumps(settings))
+    except Exception:
+        pass
+
+if "ui_settings" not in st.session_state:
+    st.session_state["ui_settings"] = load_ui_settings()
+    st.session_state["onboarding_dismissed"] = st.session_state["ui_settings"].get("onboarding_dismissed", False)
+    st.session_state["seen_learning_tutorial"] = st.session_state["ui_settings"].get("seen_learning_tutorial", False)
+
 
 # ─────────────────────────────────────────────
 # Secure key storage (auto-load into env)
@@ -334,10 +339,12 @@ with st.sidebar:
                 "1. **Explore** the pre-loaded sample data below\n"
                 "2. **Ask a question** in the chat — try *\"show trends\"*\n"
                 "3. **Upload your own CSV** via the Data tab\n"
-                "4. **Visualize** with the Explorer tab"
+                "4. **Visualize** with the Explore tab"
             )
             if st.button("✓ Got it!", key="dismiss_onboarding"):
                 st.session_state["onboarding_dismissed"] = True
+                st.session_state["ui_settings"]["onboarding_dismissed"] = True
+                save_ui_settings(st.session_state["ui_settings"])
                 st.rerun()
 
 # ─────────────────────────────────────────────
@@ -383,7 +390,7 @@ if data is not None:
 # Main tab structure — 3 tabs
 # ─────────────────────────────────────────────
 
-analyze_tab, data_tab, settings_tab = st.tabs(["Analyze", "Data", "Settings"])
+analyze_tab, data_tab, explore_tab, settings_tab = st.tabs(["Analyze", "Data", "Explore", "Settings"])
 
 # ═══════════════════════════════════════
 # ANALYZE TAB — Chat + Output + Timeline
@@ -411,7 +418,17 @@ with analyze_tab:
     with col_main:
         if data is None:
             st.markdown("### Welcome to Assay")
-            st.markdown("**Your AI data analyst is ready.** Load a dataset to get started.")
+            st.markdown("**Your autonomous, local-first data analyst is ready.**")
+            
+            st.info("""
+**What Assay can do for you:**
+- 📈 **Detect Trends & Anomalies:** Instantly find hidden patterns in your data.
+- 📊 **Smart Visualizations:** Ask for a chart in plain English, and Assay builds it.
+- 🔮 **Forecasting & Modeling:** Run predictive models without writing a line of code.
+- 🔒 **100% Private:** Your data never leaves your machine.
+            """)
+            st.write("Load a dataset below or upload your own in the **Data** tab to get started.")
+
             c1, c2 = st.columns([1, 2])
             with c1:
                 if st.button("Load Sample Data", type="primary", use_container_width=True):
@@ -450,6 +467,9 @@ with analyze_tab:
         try:
             from ui.chat_logic import (
                 detect_intent,
+                should_use_cascade,
+                cascade_execute,
+                count_tokens,
                 generate_visualization_code,
                 generate_analysis_code,
                 generate_informational_response,
@@ -479,6 +499,8 @@ with analyze_tab:
                 )
                 if st.button("Got it!", key="dismiss_tutorial"):
                     st.session_state.seen_learning_tutorial = True
+                    st.session_state["ui_settings"]["seen_learning_tutorial"] = True
+                    save_ui_settings(st.session_state["ui_settings"])
                     st.rerun()
 
         if chat_available:
@@ -525,12 +547,18 @@ with analyze_tab:
                     if "data" in metadata and metadata["data"] is not None:
                         msg_data = metadata["data"]
                         if hasattr(msg_data, 'show'):
-                            st.plotly_chart(msg_data, width="stretch",
-                                            key=f"chat_fig_{i}")
+                            try:
+                                st.plotly_chart(msg_data, width="stretch", key=f"chat_fig_{i}")
+                            except Exception:
+                                st.error("Chart could not be rendered due to invalid data format.")
                         elif isinstance(msg_data, pd.DataFrame):
                             st.dataframe(msg_data)
-                        else:
-                            st.write(msg_data)
+                        elif isinstance(msg_data, (dict, list)):
+                            with st.expander("View raw data", expanded=False):
+                                st.json(msg_data)
+                        elif isinstance(msg_data, (int, float, str, bool)):
+                            if str(msg_data).strip():
+                                st.write(msg_data)
 
             # Handle pending query from session panel "re-run" buttons
             pending_q = st.session_state.pop("pending_query", None)
@@ -549,14 +577,43 @@ with analyze_tab:
                         ctx.add_message("assistant", response)
                     else:
                         with st.status("Processing request...", expanded=True) as status:
+                            # Give a rough token estimate to the user
+                            estimated_tokens = count_tokens(prompt + chat_context)
+                            if estimated_tokens > 2000:
+                                st.toast(f"This is a complex request (~{estimated_tokens} tokens). It might take a moment.", icon="⏳")
+                                
                             status.write("Identifying intent...")
-                            intent = detect_intent(prompt, context=chat_context)
-
-                            # Store intent for timeline
-                            st.session_state["last_intent"] = intent
-
-                            if intent == "visualization":
-                                status.write("Generating visualization code...")
+                            
+                            # NEW: 2026 Execution Hardening path
+                            if should_use_cascade(prompt):
+                                status.write("Routing to Cascade Planner...")
+                                cascade_result = cascade_execute(data, prompt, context={"chat_history": ctx.chat_history})
+                                
+                                st.session_state["last_intent"] = cascade_result.get("intent", "cascade")
+                                st.session_state["execution_trace"] = cascade_result.get("steps", [])
+                                
+                                if cascade_result["success"]:
+                                    status.update(label="Cascade execution complete", state="complete", expanded=False)
+                                    output = cascade_result.get("output", "Task completed.")
+                                    # Fallback if no output
+                                    if not output: output = "I've processed your request using the Cascade Planner."
+                                    st.markdown(str(output))
+                                    ctx.add_message("assistant", str(output))
+                                else:
+                                    status.update(label="Cascade execution failed", state="error", expanded=True)
+                                    st.warning("Cascade Planner encountered an error.")
+                                    error_msg = cascade_result.get("error", "Unknown error")
+                                    st.caption(f"Reason: {error_msg}")
+                                    ctx.add_message("assistant", f"Cascade planning failed: {error_msg}")
+                            
+                            else:
+                                intent = detect_intent(prompt, context=chat_context)
+    
+                                # Store intent for timeline
+                                st.session_state["last_intent"] = intent
+    
+                                if intent == "visualization":
+                                    status.write("Generating visualization code...")
                                 code = generate_visualization_code(
                                     data, prompt,
                                     context=chat_context,
@@ -580,9 +637,17 @@ with analyze_tab:
                                         dataset=primary_id,
                                         code=code,
                                     )
-                                    st.plotly_chart(fig, width="stretch",
-                                                    key=f"viz_{hash(prompt)}")
-                                    ctx.add_message("assistant", "Here's your visualization:", metadata={"data": fig})
+                                    try:
+                                        # Support both single figures and arrays of figures (e.g. from complex LLM generation)
+                                        if isinstance(fig, list):
+                                            for idx, f in enumerate(fig):
+                                                st.plotly_chart(f, width="stretch", key=f"viz_{hash(prompt)}_{idx}")
+                                        else:
+                                            st.plotly_chart(fig, width="stretch", key=f"viz_{hash(prompt)}")
+                                    except Exception:
+                                        st.error("Chart could not be rendered due to invalid data format.")
+                                        
+                                    ctx.add_message("assistant", "Here's your visualization:", metadata={"data": getattr(fig, 'to_dict', lambda: fig)() if not isinstance(fig, list) else None, "code": code})
                                     if interaction_logger:
                                         interaction_logger.log(
                                             prompt=prompt,
@@ -656,9 +721,13 @@ with analyze_tab:
                                     if result_val is not None:
                                         if isinstance(result_val, pd.DataFrame):
                                             st.dataframe(result_val)
-                                        else:
-                                            st.write(result_val)
-                                    ctx.add_message("assistant", response, metadata={"data": result_val})
+                                        elif isinstance(result_val, (dict, list)):
+                                            with st.expander("View raw data", expanded=False):
+                                                st.json(result_val)
+                                        elif isinstance(result_val, (int, float, str, bool)):
+                                            if str(result_val).strip():
+                                                st.write(result_val)
+                                    ctx.add_message("assistant", response, metadata={"data": result_val, "code": code})
                                     st.session_state["execution_trace"] = [
                                         {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
                                         {"step_num": 2, "label": "Generate analysis code", "tool": "llm", "status": "success", "duration_ms": 0},
@@ -707,26 +776,43 @@ with analyze_tab:
             with col2:
                 if st.button("Prepare"):
                     figs = []
-                    for msg in st.session_state.get("chat_history", []):
-                        if "data" in msg and msg["data"] is not None:
-                            if hasattr(msg["data"], "to_json"):
-                                figs.append(msg["data"])
+                    for msg in ctx.chat_history:
+                        if "metadata" in msg and "data" in msg["metadata"] and msg["metadata"]["data"] is not None:
+                            if hasattr(msg["metadata"]["data"], "to_json"):
+                                figs.append(msg["metadata"]["data"])
                     try:
+                        from reports.notebook_generator import generate_notebook_bytes
                         report_bytes = generate_report_bytes(
                             df=data, result=None, figures=figs,
-                            chat_history=st.session_state.get("chat_history", []),
+                            chat_history=ctx.chat_history,
                             title=report_title,
                         )
                         st.session_state["ready_report"] = report_bytes
+                        st.session_state["ready_notebook"] = generate_notebook_bytes(
+                            chat_history=ctx.chat_history,
+                            title=report_title,
+                        )
                     except Exception as e:
                         st.error(f"Report generation failed: {e}")
             if "ready_report" in st.session_state:
-                st.download_button(
-                    label="Download HTML report",
-                    data=st.session_state["ready_report"],
-                    file_name=f"assay_report_{datetime.now().strftime('%Y%m%d_%H%M')}.html",
-                    mime="text/html",
-                )
+                dl_col1, dl_col2 = st.columns(2)
+                with dl_col1:
+                    st.download_button(
+                        label="Download HTML report",
+                        data=st.session_state["ready_report"],
+                        file_name=f"assay_report_{datetime.now().strftime('%Y%m%d_%H%M')}.html",
+                        mime="text/html",
+                        use_container_width=True,
+                    )
+                with dl_col2:
+                    if "ready_notebook" in st.session_state:
+                        st.download_button(
+                            label="Download Jupyter Notebook",
+                            data=st.session_state["ready_notebook"],
+                            file_name=f"assay_notebook_{datetime.now().strftime('%Y%m%d_%H%M')}.ipynb",
+                            mime="application/x-ipynb+json",
+                            use_container_width=True,
+                        )
 
         # Rating
         st.divider()
@@ -1042,29 +1128,16 @@ with data_tab:
             st.rerun()
 
     if data is not None:
-        sub_preview, sub_explore, sub_enrich, sub_lineage = st.tabs(
-            ["Preview", "Explore", "Enrich", "Lineage"]
+        sub_preview, sub_enrich, sub_lineage = st.tabs(
+            ["Preview", "Enrich", "Lineage"]
         )
 
         with sub_preview:
-            st.dataframe(preview)
-
-        with sub_explore:
-            try:
-                dataset_id = st.session_state.get("primary_dataset_id")
-                current_meta = st.session_state.get("dataset_metadata", {}).get(dataset_id, {})
-                context_parts = []
-                if dataset_id:
-                    context_parts.append(f"Dataset name: {dataset_id}")
-                if current_meta.get("context"):
-                    context_parts.append(current_meta.get("context"))
-                elif current_meta.get("description"):
-                    context_parts.append(current_meta.get("description"))
-                context_str = ". ".join(context_parts)
-                render_exploratory_tab(data, context=context_str)
-            except Exception as e:
-                st.error(f"Explore tab error: {e}")
-
+            # Format datetime columns to YYYY-MM-DD to save space and reduce noise
+            display_preview = preview.copy()
+            for col in display_preview.select_dtypes(include=['datetime64[ns]', 'datetime64']).columns:
+                display_preview[col] = display_preview[col].dt.strftime('%Y-%m-%d')
+            st.dataframe(display_preview)
         with sub_enrich:
             try:
                 render_action_center(data, meta)
@@ -1083,6 +1156,29 @@ with data_tab:
                 st.warning(f"Data Fabric module not available: {e}")
             except Exception as e:
                 st.error(f"Lineage tab error: {e}")
+
+# ═══════════════════════════════════
+# EXPLORE TAB
+# ═══════════════════════════════════
+
+with explore_tab:
+    if data is None:
+        st.info("Load a dataset in the Data tab first to explore it.")
+    else:
+        try:
+            dataset_id = st.session_state.get("primary_dataset_id")
+            current_meta = st.session_state.get("dataset_metadata", {}).get(dataset_id, {})
+            context_parts = []
+            if dataset_id:
+                context_parts.append(f"Dataset name: {dataset_id}")
+            if current_meta.get("context"):
+                context_parts.append(current_meta.get("context"))
+            elif current_meta.get("description"):
+                context_parts.append(current_meta.get("description"))
+            context_str = ". ".join(context_parts)
+            render_exploratory_tab(data, context=context_str)
+        except Exception as e:
+            st.error(f"Explore tab error: {e}")
 
 # ═══════════════════════════════════
 # SETTINGS TAB

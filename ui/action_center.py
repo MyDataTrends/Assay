@@ -570,7 +570,7 @@ def render_action_center(df: pd.DataFrame, meta=None):
     
     # Main sections as expanders
     if nl_available:
-        with st.expander("💬 Ask Your Data", expanded=True):
+        with st.expander("⚡ Quick Query", expanded=True):
             render_nl_query_panel(df)
         
         with st.expander("📊 Describe a Chart", expanded=False):

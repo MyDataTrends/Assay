@@ -6,6 +6,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from chatbot.intent_parser import parse_intent
 import pytest
 
+pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
+
 
 def test_scatter_plot_intent():
     intent, params = parse_intent("Show me a scatter plot of sales vs profit")

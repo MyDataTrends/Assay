@@ -131,7 +131,19 @@ class SchedulerAgent:
                 result_str = f"Error executing analysis: {exec_result.error}"
                 result = None
             else:
-                result = exec_result.output
+                raw_result = exec_result.output
+                
+                # Sanitize numpy types to prevent them from leaking into the report
+                def _sanitize(obj):
+                    if isinstance(obj, dict):
+                        return {k: _sanitize(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [_sanitize(v) for v in obj]
+                    elif hasattr(obj, 'item'):
+                        return obj.item()
+                    return obj
+                    
+                result = _sanitize(raw_result)
                 result_str = str(result)
                 
             # 3. Narrative
