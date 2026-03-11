@@ -34,9 +34,14 @@ class DecideAnalysisTypeTool(BaseTool):
             action = "analysis"
         
         try:
-            from chatbot.decision import decide_action
-            action, params = decide_action(arguments["query"])
-            return success_response({"action": action, "params": params, "confidence": 0.8})
+            from orchestration.cascade_planner import classify_intent
+            intent, confidence = classify_intent(arguments["query"])
+            action_map = {
+                "MODEL_TRAIN": "modeling", "MODEL_PREDICT": "modeling",
+                "VISUALIZE": "visualization", "DESCRIBE_DATA": "exploration",
+            }
+            mapped_action = action_map.get(intent.name, "analysis") if hasattr(intent, "name") else "analysis"
+            return success_response({"action": mapped_action, "params": {}, "confidence": confidence})
         except Exception:
             return success_response({"action": action, "params": {}, "confidence": 0.5})
 

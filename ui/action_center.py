@@ -503,7 +503,7 @@ def render_analysis_panel(df: pd.DataFrame):
     if st.button("🧠 Run Analysis", type="primary"):
         with st.spinner("Running analysis..."):
             try:
-                from orchestration.orchestrate_workflow import run_workflow
+                from modeling.llm_dynamic_analyzer import dynamic_analyze as run_workflow
                 
                 target_col = None if target == "(Auto-detect)" else target
                 result = run_workflow(df, target=target_col)

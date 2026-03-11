@@ -187,41 +187,15 @@ def should_use_cascade(query: str) -> bool:
     """
     Determine if query should use cascade planner vs legacy code generation.
     
-    Cascade is preferred for:
-    - Data profiling/description
-    - Simple visualizations
-    - Standard transformations (filter, group, aggregate)
-    
-    Legacy code generation is preferred for:
-    - Complex custom analysis
-    - Unusual visualizations
-    - Multi-step custom workflows
+    With Phase 5 Complete, ALL analytical intents are now natively handled 
+    by the Cascade Planner, including complex modeling and exports.
     """
     try:
         from orchestration import classify_intent, Intent
         
+        # Verify classification works, but route 100% of queries to cascade
         intent, confidence = classify_intent(query)
-        
-        # High-confidence known intents use cascade
-        cascade_intents = {
-            Intent.DESCRIBE_DATA,
-            Intent.VISUALIZE,
-            Intent.FILTER,
-            Intent.AGGREGATE,
-            Intent.TRANSFORM,
-        }
-        
-        if intent in cascade_intents and confidence >= 0.6:
-            return True
-            
-        # Fallback keyword detection for visualization if confidence is low
-        # This catches "plot", "chart", "graph" even if classifier is unsure
-        if "visual" in query.lower() or "chart" in query.lower() or "plot" in query.lower() or "graph" in query.lower():
-            if intent != Intent.VISUALIZE:
-                # Force visualization intent if keywords are strong
-                return True
-        
-        return False
+        return True
         
     except ImportError:
         return False

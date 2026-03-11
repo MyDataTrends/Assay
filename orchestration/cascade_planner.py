@@ -331,12 +331,33 @@ def _build_transform_plan(query: str, context: Dict[str, Any]) -> List[PlanStep]
     return steps
 
 
+def _build_modeling_plan(query: str, context: Dict[str, Any]) -> List[PlanStep]:
+    """Build plan for complex Python modeling and analysis execution."""
+    return [
+        PlanStep(
+            step_id="step_1",
+            action="custom_python",
+            tool="custom_python",
+            inputs={
+                "df": "__context.df__",
+                "query": "__context.query__",
+            },
+            expected_output="Result dictionary and generated code",
+        )
+    ]
+
+
 PLAN_BUILDERS = {
     Intent.DESCRIBE_DATA: _build_describe_plan,
     Intent.VISUALIZE: _build_visualize_plan,
     Intent.FILTER: _build_filter_plan,
     Intent.AGGREGATE: _build_aggregate_plan,
     Intent.TRANSFORM: _build_transform_plan,
+    Intent.MODEL_TRAIN: _build_modeling_plan,
+    Intent.MODEL_PREDICT: _build_modeling_plan,
+    Intent.COMPARE: _build_modeling_plan,
+    Intent.EXPORT: _build_modeling_plan,
+    Intent.ENRICH_DATA: _build_modeling_plan,
 }
 
 

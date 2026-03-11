@@ -265,6 +265,16 @@ def _handle_table_display(df: pd.DataFrame, max_rows: int = 100, **kwargs) -> Di
         "columns": list(df.columns),
     }
 
+def _handle_custom_python(df: pd.DataFrame, query: str, context: str = "", **kwargs) -> Dict[str, Any]:
+    """Execute dynamically generated python code for complex queries."""
+    from ui.chat_logic import execute_analysis_with_retry
+    success, result, code, error = execute_analysis_with_retry(df, query, context=context)
+    if success:
+        return {"result": result, "code_generated": code}
+    else:
+        # Return error message gracefully rather than throwing exception to allow Cascade to handle it
+        return {"error": error, "code_generated": code}
+
 
 # =============================================================================
 # Tool Registry
@@ -371,6 +381,22 @@ TOOL_REGISTRY: Dict[str, Tool] = {
         },
         output_schema={"df": {"type": "dataframe"}},
         handler=_handle_pandas_transform,
+        requires_llm=True,
+    ),
+    
+    # Modeling - Coarse
+    "custom_python": Tool(
+        name="custom_python",
+        description="Write and execute custom Python code for complex analysis or reporting",
+        category=ToolCategory.MODELING,
+        granularity=ToolGranularity.COARSE,
+        input_schema={
+            "df": {"type": "dataframe", "required": True},
+            "query": {"type": "str", "required": True},
+            "context": {"type": "str", "required": False},
+        },
+        output_schema={"result": {"type": "any"}, "code_generated": {"type": "str"}, "error": {"type": "str"}},
+        handler=_handle_custom_python,
         requires_llm=True,
     ),
     

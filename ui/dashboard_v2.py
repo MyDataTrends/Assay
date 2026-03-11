@@ -22,7 +22,7 @@ st.set_page_config(
 )
 
 # Imports after page config
-from orchestration.orchestrate_workflow import run_workflow, orchestrate_workflow
+from modeling.llm_dynamic_analyzer import dynamic_analyze as run_workflow
 from orchestration.data_quality_scorer import compute_safety_metrics, summarize_for_display
 from orchestration.analysis_selector import select_analyzer
 from preprocessing.metadata_parser import infer_column_meta, merge_user_labels

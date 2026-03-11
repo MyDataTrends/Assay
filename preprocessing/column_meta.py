@@ -16,9 +16,9 @@ from pathlib import Path
 from typing import List
 
 import pandas as pd
-
 from utils.security import secure_join
-from .save_meta import _hash_df
+
+
 
 FEEDBACK_PATH = Path("feedback/role_corrections.json")
 
@@ -31,6 +31,8 @@ def _load_role_corrections(df: pd.DataFrame, file_path: Path = FEEDBACK_PATH) ->
             data = json.load(f)
     except FileNotFoundError:
         return {}
+        
+    from .save_meta import _hash_df
     return data.get(_hash_df(df), {})
 
 

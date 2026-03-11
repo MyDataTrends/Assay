@@ -13,7 +13,7 @@ from pathlib import Path
 from agents.config import load_agent_configs, get_agent_config
 from agents.cli import _create_agent, _register_agents, _AGENT_CLASSES
 from agents.memory.operational import OperationalMemory
-from orchestration.orchestrate_workflow import run_workflow
+from modeling.llm_dynamic_analyzer import dynamic_analyze as run_workflow
 
 # --- Constants ---
 PROJECT_ROOT = Path(__file__).resolve().parents[1]

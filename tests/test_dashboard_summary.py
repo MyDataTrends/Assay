@@ -63,11 +63,7 @@ def _make_dummy_streamlit(summary_text):
 def test_summary_display(monkeypatch):
     st, calls = _make_dummy_streamlit("Summary text")
     monkeypatch.setitem(sys.modules, "streamlit", st)
-    monkeypatch.setitem(
-        sys.modules,
-        "chatbot.chatbot",
-        types.SimpleNamespace(chatbot_interface=lambda *a, **k: None),
-    )
+
     monkeypatch.setitem(
         sys.modules,
         "feedback.ratings",
@@ -103,11 +99,7 @@ def test_modeling_failure_message(monkeypatch):
     st.session_state["result"]["modeling_failed"] = True
     st.session_state["result"]["failure_reason"] = "Bad metrics"
     monkeypatch.setitem(sys.modules, "streamlit", st)
-    monkeypatch.setitem(
-        sys.modules,
-        "chatbot.chatbot",
-        types.SimpleNamespace(chatbot_interface=lambda *a, **k: None),
-    )
+
     monkeypatch.setitem(
         sys.modules,
         "feedback.ratings",

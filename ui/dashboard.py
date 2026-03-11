@@ -57,10 +57,8 @@ if "cache_cleared" not in st.session_state:
     except Exception:
         pass
 
-log_profile("Importing orchestration...")
-from orchestration.orchestrate_workflow import run_workflow, orchestrate_workflow
-log_profile("Importing chatbot...")
-from chatbot.chatbot import chatbot_interface
+
+
 log_profile("Importing pandas...")
 import pandas as pd
 import json
@@ -597,8 +595,25 @@ with analyze_tab:
                                     output = cascade_result.get("output", "Task completed.")
                                     # Fallback if no output
                                     if not output: output = "I've processed your request using the Cascade Planner."
-                                    st.markdown(str(output))
-                                    ctx.add_message("assistant", str(output))
+                                    
+                                    if isinstance(output, str):
+                                        st.markdown(output)
+                                        ctx.add_message("assistant", output)
+                                    else:
+                                        natural = generate_natural_answer(prompt, output)
+                                        response = natural or "I've processed your request. Expand the data view below to see the detailed results."
+                                        
+                                        st.markdown(response)
+                                        
+                                        if isinstance(output, pd.DataFrame):
+                                            st.dataframe(output)
+                                        elif isinstance(output, (dict, list)):
+                                            with st.expander("View results data", expanded=False):
+                                                st.json(output)
+                                        else:
+                                            st.write(output)
+                                            
+                                        ctx.add_message("assistant", response, metadata={"data": output})
                                 else:
                                     status.update(label="Cascade execution failed", state="error", expanded=True)
                                     st.warning("Cascade Planner encountered an error.")
@@ -614,155 +629,155 @@ with analyze_tab:
     
                                 if intent == "visualization":
                                     status.write("Generating visualization code...")
-                                code = generate_visualization_code(
-                                    data, prompt,
-                                    context=chat_context,
-                                    datasets=datasets_all,
-                                )
-                                fig = None
-                                if code:
-                                    status.write("Rendering chart...")
-                                    success, fig, error = safe_execute_viz(
-                                        code, data, datasets=datasets_all
+                                    code = generate_visualization_code(
+                                        data, prompt,
+                                        context=chat_context,
+                                        datasets=datasets_all,
                                     )
-                                if not fig:
-                                    status.write("Trying fallback renderer...")
-                                    fig = fallback_visualization(data, prompt)
+                                    fig = None
+                                    if code:
+                                        status.write("Rendering chart...")
+                                        success, fig, error = safe_execute_viz(
+                                            code, data, datasets=datasets_all
+                                        )
+                                    if not fig:
+                                        status.write("Trying fallback renderer...")
+                                        fig = fallback_visualization(data, prompt)
 
-                                if fig:
-                                    status.update(label="Visualization ready", state="complete", expanded=False)
-                                    # Result card
-                                    render_result_card(
-                                        title="Visualization",
-                                        dataset=primary_id,
-                                        code=code,
-                                    )
-                                    try:
-                                        # Support both single figures and arrays of figures (e.g. from complex LLM generation)
-                                        if isinstance(fig, list):
-                                            for idx, f in enumerate(fig):
-                                                st.plotly_chart(f, width="stretch", key=f"viz_{hash(prompt)}_{idx}")
-                                        else:
-                                            st.plotly_chart(fig, width="stretch", key=f"viz_{hash(prompt)}")
-                                    except Exception:
-                                        st.error("Chart could not be rendered due to invalid data format.")
+                                    if fig:
+                                        status.update(label="Visualization ready", state="complete", expanded=False)
+                                        # Result card
+                                        render_result_card(
+                                            title="Visualization",
+                                            dataset=primary_id,
+                                            code=code,
+                                        )
+                                        try:
+                                            # Support both single figures and arrays of figures (e.g. from complex LLM generation)
+                                            if isinstance(fig, list):
+                                                for idx, f in enumerate(fig):
+                                                    st.plotly_chart(f, width="stretch", key=f"viz_{hash(prompt)}_{idx}")
+                                            else:
+                                                st.plotly_chart(fig, width="stretch", key=f"viz_{hash(prompt)}")
+                                        except Exception:
+                                            st.error("Chart could not be rendered due to invalid data format.")
                                         
-                                    ctx.add_message("assistant", "Here's your visualization:", metadata={"data": getattr(fig, 'to_dict', lambda: fig)() if not isinstance(fig, list) else None, "code": code})
-                                    if interaction_logger:
-                                        interaction_logger.log(
-                                            prompt=prompt,
-                                            response="Visualization created",
-                                            interaction_type=InteractionType.VISUALIZATION,
-                                            code_generated=code or "",
-                                            execution_success=True,
-                                            dataset_name=primary_id,
-                                        )
-                                    # Minimal trace for timeline
-                                    st.session_state["execution_trace"] = [
-                                        {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
-                                        {"step_num": 2, "label": "Generate viz code", "tool": "llm", "status": "success", "duration_ms": 0},
-                                        {"step_num": 3, "label": "Render chart", "tool": "plotly", "status": "success", "duration_ms": 0},
-                                    ]
-                                else:
-                                    status.update(label="Visualization failed", state="error", expanded=True)
-                                    response = "I couldn't create that visualization. Try describing what you want to see more specifically."
-                                    st.warning(f"Limited confidence in result — visualization could not be rendered.")
-                                    st.info("Suggested next step: Try 'show a bar chart of [column] by [column]'.")
-                                    ctx.add_message("assistant", response)
-                                    if interaction_logger:
-                                        interaction_logger.log(
-                                            prompt=prompt,
-                                            response=response,
-                                            interaction_type=InteractionType.VISUALIZATION,
-                                            code_generated=code or "",
-                                            execution_success=False,
-                                            dataset_name=primary_id,
-                                        )
+                                        ctx.add_message("assistant", "Here's your visualization:", metadata={"data": getattr(fig, 'to_dict', lambda: fig)() if not isinstance(fig, list) else None, "code": code})
+                                        if interaction_logger:
+                                            interaction_logger.log(
+                                                prompt=prompt,
+                                                response="Visualization created",
+                                                interaction_type=InteractionType.VISUALIZATION,
+                                                code_generated=code or "",
+                                                execution_success=True,
+                                                dataset_name=primary_id,
+                                            )
+                                        # Minimal trace for timeline
+                                        st.session_state["execution_trace"] = [
+                                            {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
+                                            {"step_num": 2, "label": "Generate viz code", "tool": "llm", "status": "success", "duration_ms": 0},
+                                            {"step_num": 3, "label": "Render chart", "tool": "plotly", "status": "success", "duration_ms": 0},
+                                        ]
+                                    else:
+                                        status.update(label="Visualization failed", state="error", expanded=True)
+                                        response = "I couldn't create that visualization. Try describing what you want to see more specifically."
+                                        st.warning(f"Limited confidence in result — visualization could not be rendered.")
+                                        st.info("Suggested next step: Try 'show a bar chart of [column] by [column]'.")
+                                        ctx.add_message("assistant", response)
+                                        if interaction_logger:
+                                            interaction_logger.log(
+                                                prompt=prompt,
+                                                response=response,
+                                                interaction_type=InteractionType.VISUALIZATION,
+                                                code_generated=code or "",
+                                                execution_success=False,
+                                                dataset_name=primary_id,
+                                            )
 
-                            elif intent == "informational":
-                                status.write("Consulting knowledge base...")
-                                response = generate_informational_response(prompt, context=chat_context)
-                                status.update(label="Response ready", state="complete", expanded=False)
-                                if not response:
-                                    response = "Unable to generate a response right now. Please check if the LLM is configured."
-                                st.markdown(response)
-                                ctx.add_message("assistant", response)
-                                st.session_state["execution_trace"] = [
-                                    {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
-                                    {"step_num": 2, "label": "Generate response", "tool": "llm", "status": "success", "duration_ms": 0},
-                                ]
-                                if interaction_logger:
-                                    interaction_logger.log(
-                                        prompt=prompt,
-                                        response=response,
-                                        interaction_type=InteractionType.CHAT,
-                                        dataset_name=primary_id,
-                                    )
-
-                            else:
-                                status.write("Generating analysis code...")
-                                success, result_val, code, error = execute_analysis_with_retry(
-                                    data, prompt, context=chat_context, datasets=datasets_all
-                                )
-
-                                if success:
-                                    status.update(label="Analysis complete", state="complete", expanded=False)
-                                    natural = generate_natural_answer(prompt, result_val)
-                                    response = natural or "Here's what I found:"
-
-                                    # Result card wraps the output
-                                    render_result_card(
-                                        title=prompt[:80],
-                                        dataset=primary_id,
-                                        insight=natural[:120] if natural else None,
-                                        code=code,
-                                    )
+                                elif intent == "informational":
+                                    status.write("Consulting knowledge base...")
+                                    response = generate_informational_response(prompt, context=chat_context)
+                                    status.update(label="Response ready", state="complete", expanded=False)
+                                    if not response:
+                                        response = "Unable to generate a response right now. Please check if the LLM is configured."
                                     st.markdown(response)
-                                    if result_val is not None:
-                                        if isinstance(result_val, pd.DataFrame):
-                                            st.dataframe(result_val)
-                                        elif isinstance(result_val, (dict, list)):
-                                            with st.expander("View raw data", expanded=False):
-                                                st.json(result_val)
-                                        elif isinstance(result_val, (int, float, str, bool)):
-                                            if str(result_val).strip():
-                                                st.write(result_val)
-                                    ctx.add_message("assistant", response, metadata={"data": result_val, "code": code})
-                                    st.session_state["execution_trace"] = [
-                                        {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
-                                        {"step_num": 2, "label": "Generate analysis code", "tool": "llm", "status": "success", "duration_ms": 0},
-                                        {"step_num": 3, "label": "Execute analysis", "tool": "python_exec", "status": "success", "duration_ms": 0},
-                                    ]
-                                    if interaction_logger:
-                                        interaction_logger.log(
-                                            prompt=prompt,
-                                            response=response,
-                                            interaction_type=InteractionType.ANALYSIS,
-                                            code_generated=code,
-                                            execution_success=True,
-                                            dataset_name=primary_id,
-                                        )
-                                else:
-                                    status.update(label="Analysis failed", state="error", expanded=True)
-                                    st.warning("Limited confidence in result — analysis could not complete.")
-                                    st.caption(f"Reason: {error}")
-                                    st.info("Suggested next step: Try rephrasing your question or check that the relevant columns exist in your dataset.")
-                                    response = f"Analysis failed: {error}"
                                     ctx.add_message("assistant", response)
                                     st.session_state["execution_trace"] = [
                                         {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
-                                        {"step_num": 2, "label": "Generate analysis code", "tool": "llm", "status": "success", "duration_ms": 0},
-                                        {"step_num": 3, "label": "Execute analysis", "tool": "python_exec", "status": "failed", "duration_ms": 0, "error": error},
+                                        {"step_num": 2, "label": "Generate response", "tool": "llm", "status": "success", "duration_ms": 0},
                                     ]
                                     if interaction_logger:
                                         interaction_logger.log(
                                             prompt=prompt,
                                             response=response,
-                                            interaction_type=InteractionType.ANALYSIS,
-                                            code_generated=code,
-                                            execution_success=False,
+                                            interaction_type=InteractionType.CHAT,
                                             dataset_name=primary_id,
                                         )
+
+                                else:
+                                    status.write("Generating analysis code...")
+                                    success, result_val, code, error = execute_analysis_with_retry(
+                                        data, prompt, context=chat_context, datasets=datasets_all
+                                    )
+
+                                    if success:
+                                        status.update(label="Analysis complete", state="complete", expanded=False)
+                                        natural = generate_natural_answer(prompt, result_val)
+                                        response = natural or "Here's what I found:"
+
+                                        # Result card wraps the output
+                                        render_result_card(
+                                            title=prompt[:80],
+                                            dataset=primary_id,
+                                            insight=natural[:120] if natural else None,
+                                            code=code,
+                                        )
+                                        st.markdown(response)
+                                        if result_val is not None:
+                                            if isinstance(result_val, pd.DataFrame):
+                                                st.dataframe(result_val)
+                                            elif isinstance(result_val, (dict, list)):
+                                                with st.expander("View raw data", expanded=False):
+                                                    st.json(result_val)
+                                            elif isinstance(result_val, (int, float, str, bool)):
+                                                if str(result_val).strip():
+                                                    st.write(result_val)
+                                        ctx.add_message("assistant", response, metadata={"data": result_val, "code": code})
+                                        st.session_state["execution_trace"] = [
+                                            {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
+                                            {"step_num": 2, "label": "Generate analysis code", "tool": "llm", "status": "success", "duration_ms": 0},
+                                            {"step_num": 3, "label": "Execute analysis", "tool": "python_exec", "status": "success", "duration_ms": 0},
+                                        ]
+                                        if interaction_logger:
+                                            interaction_logger.log(
+                                                prompt=prompt,
+                                                response=response,
+                                                interaction_type=InteractionType.ANALYSIS,
+                                                code_generated=code,
+                                                execution_success=True,
+                                                dataset_name=primary_id,
+                                            )
+                                    else:
+                                        status.update(label="Analysis failed", state="error", expanded=True)
+                                        st.warning("Limited confidence in result — analysis could not complete.")
+                                        st.caption(f"Reason: {error}")
+                                        st.info("Suggested next step: Try rephrasing your question or check that the relevant columns exist in your dataset.")
+                                        response = f"Analysis failed: {error}"
+                                        ctx.add_message("assistant", response)
+                                        st.session_state["execution_trace"] = [
+                                            {"step_num": 1, "label": "Classify intent", "tool": "intent_detector", "status": "success", "duration_ms": 0},
+                                            {"step_num": 2, "label": "Generate analysis code", "tool": "llm", "status": "success", "duration_ms": 0},
+                                            {"step_num": 3, "label": "Execute analysis", "tool": "python_exec", "status": "failed", "duration_ms": 0, "error": error},
+                                        ]
+                                        if interaction_logger:
+                                            interaction_logger.log(
+                                                prompt=prompt,
+                                                response=response,
+                                                interaction_type=InteractionType.ANALYSIS,
+                                                code_generated=code,
+                                                execution_success=False,
+                                                dataset_name=primary_id,
+                                            )
                         st.rerun()
 
         # Export report
@@ -955,22 +970,7 @@ with analyze_tab:
                     disabled=not st.session_state.get("is_paid", False),
                 )
 
-        # Run history rerun
-        if run_history:
-            st.divider()
-            with st.expander("Run History", expanded=False):
-                for idx, entry in enumerate(run_history):
-                    rid = entry.get("run_id")
-                    if not rid:
-                        continue
-                    col_a, col_b = st.columns([4, 1])
-                    with col_a:
-                        st.write(rid)
-                    with col_b:
-                        if st.button("Rerun", key=f"rerun_{rid}_{idx}"):
-                            res = orchestrate_workflow(rid, rid, load_datalake_dfs())
-                            st.session_state["result"] = res
-                            st.rerun()
+
 
 # ═══════════════════════════════════
 # DATA TAB — Upload + Explore

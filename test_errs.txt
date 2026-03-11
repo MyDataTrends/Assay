@@ -1,0 +1,121 @@
+FFFF                                                                     [100%]
+================================== FAILURES ===================================
+__________________ test_dashboard_recommendations_and_report __________________
+tests\test_dashboard_sections.py:24: in test_dashboard_recommendations_and_report
+    exp = next(e for e in at.expander if e.label == "Recommended Models")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration
+---------------------------- Captured stderr call -----------------------------
+2026-03-10 22:10:38.933 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-10 22:10:38.933 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-10 22:10:38.933 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-10 22:10:38.933 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-10 22:10:39.041 Uncaught app execution
+Traceback (most recent call last):
+  File "C:\Users\ryanm\AppData\Roaming\Python\Python313\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+  File "C:\Users\ryanm\AppData\Roaming\Python\Python313\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\Assay\Assay\ui\dashboard.py", line 66, in <module>
+    from feedback.ratings import store_rating
+  File "C:\Projects\Assay\Assay\feedback\__init__.py", line 2, in <module>
+    from .role_corrections import (
+    ...<4 lines>...
+    )
+  File "C:\Projects\Assay\Assay\feedback\role_corrections.py", line 9, in <module>
+    from preprocessing.save_meta import _hash_df
+  File "C:\Projects\Assay\Assay\preprocessing\save_meta.py", line 11, in <module>
+    from .column_meta import ColumnMeta
+  File "C:\Projects\Assay\Assay\preprocessing\column_meta.py", line 21, in <module>
+    from .save_meta import _hash_df
+ImportError: cannot import name '_hash_df' from partially initialized module 'preprocessing.save_meta' (most likely due to a circular import) (C:\Projects\Assay\Assay\preprocessing\save_meta.py)
+__________________________ test_run_history_display ___________________________
+tests\test_dashboard_sections.py:50: in test_run_history_display
+    assert any(e.label == "Run History" for e in at.expander)
+E   assert False
+E    +  where False = any(<generator object test_run_history_display.<locals>.<genexpr> at 0x0000023396429080>)
+---------------------------- Captured stderr call -----------------------------
+2026-03-10 22:10:39.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-10 22:10:39.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-10 22:10:39.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-10 22:10:39.385 Uncaught app execution
+Traceback (most recent call last):
+  File "C:\Users\ryanm\AppData\Roaming\Python\Python313\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 129, in exec_func_with_error_handling
+    result = func()
+  File "C:\Users\ryanm\AppData\Roaming\Python\Python313\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\Assay\Assay\ui\dashboard.py", line 67, in <module>
+    from feedback.role_corrections import store_role_corrections
+  File "C:\Projects\Assay\Assay\feedback\__init__.py", line 2, in <module>
+    from .role_corrections import (
+    ...<4 lines>...
+    )
+  File "C:\Projects\Assay\Assay\feedback\role_corrections.py", line 9, in <module>
+    from preprocessing.save_meta import _hash_df
+  File "C:\Projects\Assay\Assay\preprocessing\save_meta.py", line 11, in <module>
+    from .column_meta import ColumnMeta
+  File "C:\Projects\Assay\Assay\preprocessing\column_meta.py", line 21, in <module>
+    from .save_meta import _hash_df
+ImportError: cannot import name '_hash_df' from partially initialized module 'preprocessing.save_meta' (most likely due to a circular import) (C:\Projects\Assay\Assay\preprocessing\save_meta.py)
+____________________________ test_summary_display _____________________________
+tests\test_dashboard_summary.py:91: in test_summary_display
+    importlib.import_module("ui.dashboard")
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+<frozen importlib._bootstrap_external>:1026: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+ui\dashboard.py:72: in <module>
+    from preprocessing.save_meta import (
+preprocessing\save_meta.py:11: in <module>
+    from .column_meta import ColumnMeta
+preprocessing\column_meta.py:21: in <module>
+    from .save_meta import _hash_df
+E   ImportError: cannot import name '_hash_df' from partially initialized module 'preprocessing.save_meta' (most likely due to a circular import) (C:\Projects\Assay\Assay\preprocessing\save_meta.py)
+________________________ test_modeling_failure_message ________________________
+tests\test_dashboard_summary.py:119: in test_modeling_failure_message
+    importlib.import_module("ui.dashboard")
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+<frozen importlib._bootstrap_external>:1026: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+ui\dashboard.py:67: in <module>
+    from feedback.role_corrections import store_role_corrections
+feedback\__init__.py:2: in <module>
+    from .role_corrections import (
+feedback\role_corrections.py:9: in <module>
+    from preprocessing.save_meta import _hash_df
+preprocessing\save_meta.py:11: in <module>
+    from .column_meta import ColumnMeta
+preprocessing\column_meta.py:21: in <module>
+    from .save_meta import _hash_df
+E   ImportError: cannot import name '_hash_df' from partially initialized module 'preprocessing.save_meta' (most likely due to a circular import) (C:\Projects\Assay\Assay\preprocessing\save_meta.py)
+=========================== short test summary info ===========================
+FAILED tests/test_dashboard_sections.py::test_dashboard_recommendations_and_report
+FAILED tests/test_dashboard_sections.py::test_run_history_display - assert False
+FAILED tests/test_dashboard_summary.py::test_summary_display - ImportError: c...
+FAILED tests/test_dashboard_summary.py::test_modeling_failure_message - Impor...
+4 failed in 2.14s
